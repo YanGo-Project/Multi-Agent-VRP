@@ -115,6 +115,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const InputData &input) {
     using score_type = FirstStepAnswer::score_type;
     using points_type = FirstStepAnswer::points_type;
 
+    auto start_time = input.agent_start_time[input.current_agent];
     auto max_dist = input.max_distance[input.current_agent];
     auto max_time = input.max_time[input.current_agent];
     auto max_load = input.max_load[input.current_agent];
@@ -171,7 +172,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const InputData &input) {
 
                             FirstStepAnswer::score_type travel_time;
                             if constexpr (is_time_dependent) {
-                                travel_time = input.get_time_dependent_cost(prev_solution.time, i, j);
+                                travel_time = input.get_time_dependent_cost(prev_solution.time + start_time, i, j);
                             } else {
                                 travel_time = input.time_matrix[0][i][j];
                             }

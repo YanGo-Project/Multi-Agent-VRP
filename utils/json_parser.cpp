@@ -5,6 +5,7 @@
 namespace nlohmann {
     inline void from_json(const json &j, InputData &t) {
         j.at("points_count").get_to(t.points_count);
+        j.at("start_time").get_to(t.agent_start_time);
         j.at("agents_count").get_to(t.agents_count);
         j.at("min_load").get_to(t.min_load);
         j.at("max_load").get_to(t.max_load);
