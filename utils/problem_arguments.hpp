@@ -36,7 +36,7 @@ struct InputData {
     /// количество агентов в задаче
     points_type agents_count{};
     /// время старта агента относительно запуска программы
-    std::vector<uint64_t> agent_start_time;
+    std::vector<int64_t> agent_start_time;
     /// минимальная загрузка исполнителя для каждого агента
     std::vector<points_type> min_load{};
     /// максимальная загрузка исполнителя для каждого агента
