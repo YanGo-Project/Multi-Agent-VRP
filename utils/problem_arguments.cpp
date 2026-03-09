@@ -135,7 +135,7 @@ InputData::get_path_time_distance_score(const std::vector<InputData::points_type
 
         distance += distance_matrix[from][to];
         // функция сама сделает маппинг если is_mapped
-        auto travel_time = get_time_dependent_cost(time, path[i], path[i + 1]);
+        auto travel_time = get_time_dependent_cost(time + agent_start_time[current_agent], path[i], path[i + 1]);
 
         time += (to == 0 ? 0 : point_service_times[to - 1]) + travel_time;
         // point_scores - свдинуты на 1 индекс, т.к. 0 - депо
