@@ -12,7 +12,7 @@
 struct FirstStepAnswer {
 
     using score_type = int64_t;
-    using points_type = InputData::points_type;
+    using points_type = TInputData::points_type;
     static constexpr score_type default_value = std::numeric_limits<score_type>::min() + 1;
 
     /// значение целевой функции
@@ -36,8 +36,8 @@ struct FirstStepAnswer {
     }
 };
 
-template<size_t bitset_size = std::numeric_limits<InputData::points_type>::max(), bool is_time_dependent = false>
-std::vector<FirstStepAnswer> DoFirstStep(const InputData &input);
+template<size_t bitset_size = std::numeric_limits<TInputData::points_type>::max(), bool is_time_dependent = false>
+std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input);
 
 std::ostream &operator<<(std::ostream &os, const FirstStepAnswer &answer);
 

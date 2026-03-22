@@ -18,10 +18,13 @@ set(UTILS_SOURCES
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(SRC_SOURCES
         "${SRC_DIR}/first_step.cpp"
+        "${SRC_DIR}/inter_operation.cpp"
 )
 
+set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
 add_library(utils STATIC ${UTILS_SOURCES} ${SRC_SOURCES})
-target_include_directories(utils PUBLIC ${UTILS_DIR})
+target_include_directories(utils PUBLIC ${UTILS_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(utils PUBLIC nlohmann_json::nlohmann_json)
 
 set(SOURCES main.cpp)
@@ -35,5 +38,6 @@ endif()
 
 option(SAVE_STEPS "save each 5 seconds" OFF)
 if (SAVE_STEPS)
+    add_definitions(-DCHECK_SWAPS)
     add_definitions(-DSAVE_STEPS)
 endif()
