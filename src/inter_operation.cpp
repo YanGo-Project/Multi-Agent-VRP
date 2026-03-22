@@ -161,9 +161,9 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
                 }
 #endif
 
-            if (distance1 >= path1.max_distance || distance2 >= path2.max_distance) {
+            if (distance1 > path1.max_distance || distance2 > path2.max_distance) {
                 ++stats.dist_exceed;
-            } else if (time1 >= path1.max_time || time2 >= path2.max_time) {
+            } else if (time1 > path1.max_time || time2 > path2.max_time) {
                 ++stats.time_exceed;
             } else if (score1 + score2 <= initial_score) {
                 ++stats.no_gain;
