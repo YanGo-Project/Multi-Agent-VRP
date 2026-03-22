@@ -27,7 +27,14 @@ bool TInnerOperations::DoOperation(TPath& path, const TInputData& inputData,
         &TInnerOperations::TwoOpt,        // 3
         &TInnerOperations::OrOpt,         // 4
     };
-    return (this->*kOperations[static_cast<uint8_t>(operation)])(path, inputData, context);
+
+    constexpr std::size_t kOperationsCount = sizeof(kOperations) / sizeof(kOperations[0]);
+    const auto index = static_cast<std::size_t>(static_cast<uint8_t>(operation));
+    if (index >= kOperationsCount) {
+        return false;
+    }
+
+    return (this->*kOperations[index])(path, inputData, context);
 }
 
 // меняем местами соседние вершины
