@@ -14,8 +14,17 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
         &TInterOperations::TwoOpt,      // 2
         &TInterOperations::Cross,       // 3
     };
+    static constexpr uint8_t kOperationsSize =
+        static_cast<uint8_t>(sizeof(kOperations) / sizeof(kOperations[0]));
+
+    const uint8_t idx = static_cast<uint8_t>(operation);
+    assert(idx < kOperationsSize);
+    if (idx >= kOperationsSize) {
+        return false;
+    }
+
     RejectStats stats{};
-    return (this->*kOperations[static_cast<uint8_t>(operation)])(path1, path2, inputData, stats);
+    return (this->*kOperations[idx])(path1, path2, inputData, stats);
 }
 
 bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData, RejectStats& stats) {
