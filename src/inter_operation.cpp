@@ -54,9 +54,9 @@ bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &in
 
                 auto [distance2, time2, score2] = inputData.get_path_distance_time_score(dst);
 
-                if (distance1 >= src.max_distance || distance2 >= dst.max_distance) {
+                if (distance1 > src.max_distance || distance2 > dst.max_distance) {
                     ++stats.dist_exceed;
-                } else if (time1 >= src.max_time || time2 >= dst.max_time) {
+                } else if (time1 > src.max_time || time2 > dst.max_time) {
                     ++stats.time_exceed;
                 } else if (score1 + score2 <= initial_score) {
                     ++stats.no_gain;
