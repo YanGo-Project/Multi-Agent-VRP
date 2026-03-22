@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include <utility>
 
 std::ostream& operator<<(std::ostream& os, const TPath& path) {
     os << "score=" << std::setw(8) << path.score
