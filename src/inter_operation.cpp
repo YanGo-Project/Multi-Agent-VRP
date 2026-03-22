@@ -62,8 +62,8 @@ bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &in
 
                 auto [distance2, time2, score2] = inputData.get_path_distance_time_score(dst);
                 
-                if (distance1 <= path1.max_distance && distance2 <= path2.max_distance && 
-                    time1 <= path1.max_time && time2 <= path2.max_time && 
+                if (distance1 <= src.max_distance && distance2 <= dst.max_distance &&
+                    time1 <= src.max_time && time2 <= dst.max_time &&
                     score1 + score2 > initial_score) {
 
                     found = true;
