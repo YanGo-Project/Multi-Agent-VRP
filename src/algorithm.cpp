@@ -105,7 +105,7 @@ void Optimize(std::vector<TPath>& paths, const TInputData& inputData, const Opti
         if (inter_ok || any_inner_ok) {
             no_improve = 0;
             std::cout << "-------------------------------------------------------\n";
-            std::cout << "Imporved: " << inter_ok << " " << any_inner_ok << " for path1 and path2: " << path1 << " " << path2 << "\n"; 
+            std::cout << "Improved: " << inter_ok << " " << any_inner_ok << " for path1 and path2: " << path1 << " " << path2 << "\n"; 
             print_paths();
             std::cout << "-------------------------------------------------------\n";
         } else {
