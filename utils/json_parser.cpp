@@ -5,8 +5,14 @@
 namespace nlohmann {
     inline void from_json(const json &j, TInputData &t) {
         j.at("points_count").get_to(t.points_count);
-        j.at("start_time").get_to(t.agent_start_time);
         j.at("agents_count").get_to(t.agents_count);
+
+        if (j.contains("start_time")) {
+            j.at("start_time").get_to(t.agent_start_time);
+        } else {
+            // Default start times to 0 for each agent if the field is missing
+            t.agent_start_time = decltype(t.agent_start_time)(t.agents_count, 0);
+        }
         j.at("min_load").get_to(t.min_load);
         j.at("max_load").get_to(t.max_load);
         j.at("max_time").get_to(t.max_time);
