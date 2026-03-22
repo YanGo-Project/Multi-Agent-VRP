@@ -386,6 +386,10 @@ void TInterOperations::RunLocalSearch(std::vector<TPath>& paths,
                                       int                 max_no_improvement) {
     assert(max_no_improvement > 0);
 
+    if (paths.size() < 2) {
+        return;
+    }
+
     static constexpr TOperationFn kOperations[] = {
         &TInterOperations::Relocate,
         &TInterOperations::Swap,
