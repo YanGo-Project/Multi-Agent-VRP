@@ -6,6 +6,8 @@
 #include <map>
 #include <unordered_set>
 
+struct TPath;
+
 struct MetaParameters {
     int population_size;
     int alpha;
@@ -29,7 +31,7 @@ struct ProgramArguments {
 
 bool ParseProgramArguments(int argc, char *argv[], ProgramArguments &args);
 
-struct InputData {
+struct TInputData {
     using points_type = uint16_t;
     /// количество точек в задаче, включая склад.
     points_type points_count{};
@@ -63,7 +65,7 @@ struct InputData {
 
     [[nodiscard]] int64_t get_time_dependent_cost(int64_t time, points_type from, points_type to) const;
 
-    [[nodiscard]] std::tuple<int64_t, int64_t, int64_t> get_path_time_distance_score(const std::vector<points_type> &path) const;
+    [[nodiscard]] std::tuple<int64_t, int64_t, int64_t> get_path_distance_time_score(const TPath& path) const;
 
     std::map<points_type, points_type> from_new_to_old{};
 
@@ -73,10 +75,10 @@ struct InputData {
     bool is_mapped = false;
 };
 
-std::ostream &operator<<(std::ostream &os, const InputData &data);
+std::ostream &operator<<(std::ostream &os, const TInputData &data);
 
 struct OutData {
-    using points_type = InputData::points_type;
+    using points_type = TInputData::points_type;
     /// последовательность индексов точек, составляющих найденный маршрут.
     std::vector<points_type> route;
     /// количество точек в решении.

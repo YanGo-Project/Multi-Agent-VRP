@@ -4,7 +4,7 @@
 #include <nlohmann/json.hpp>
 
 namespace JsonParser {
-    bool ParseInputDataFromJson(const std::string &jsonPath, InputData &arg);
+    bool ParseInputDataFromJson(const std::string &jsonPath, TInputData &arg);
 
     bool ParseSolutionFromJson(const std::string &jsonPath, OutData& solution);
 

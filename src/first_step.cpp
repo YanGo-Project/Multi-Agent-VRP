@@ -110,7 +110,7 @@ namespace {
 }
 
 template<size_t bitset_size, bool is_time_dependent>
-std::vector<FirstStepAnswer> DoFirstStep(const InputData &input) {
+std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input) {
 
     using score_type = FirstStepAnswer::score_type;
     using points_type = FirstStepAnswer::points_type;
@@ -257,13 +257,13 @@ std::ostream &operator<<(std::ostream &os, const FirstStepAnswer &answer) {
     return os;
 }
 
-template std::vector<FirstStepAnswer> DoFirstStep<128, true>(const InputData &input);
-template std::vector<FirstStepAnswer> DoFirstStep<256, true>(const InputData &input);
-template std::vector<FirstStepAnswer> DoFirstStep<512, true>(const InputData &input);
-template std::vector<FirstStepAnswer> DoFirstStep<std::numeric_limits<InputData::points_type>::max(), true>(const InputData &input);
+template std::vector<FirstStepAnswer> DoFirstStep<128, true>(const TInputData &input);
+template std::vector<FirstStepAnswer> DoFirstStep<256, true>(const TInputData &input);
+template std::vector<FirstStepAnswer> DoFirstStep<512, true>(const TInputData &input);
+template std::vector<FirstStepAnswer> DoFirstStep<std::numeric_limits<TInputData::points_type>::max(), true>(const TInputData &input);
 
 
-template std::vector<FirstStepAnswer> DoFirstStep<128, false>(const InputData &input);
-template std::vector<FirstStepAnswer> DoFirstStep<256, false>(const InputData &input);
-template std::vector<FirstStepAnswer> DoFirstStep<512, false>(const InputData &input);
-template std::vector<FirstStepAnswer> DoFirstStep<std::numeric_limits<InputData::points_type>::max(), false>(const InputData &input);
+template std::vector<FirstStepAnswer> DoFirstStep<128, false>(const TInputData &input);
+template std::vector<FirstStepAnswer> DoFirstStep<256, false>(const TInputData &input);
+template std::vector<FirstStepAnswer> DoFirstStep<512, false>(const TInputData &input);
+template std::vector<FirstStepAnswer> DoFirstStep<std::numeric_limits<TInputData::points_type>::max(), false>(const TInputData &input);

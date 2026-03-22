@@ -3,7 +3,7 @@
 #include "json_parser.hpp"
 
 namespace nlohmann {
-    inline void from_json(const json &j, InputData &t) {
+    inline void from_json(const json &j, TInputData &t) {
         j.at("points_count").get_to(t.points_count);
         j.at("agents_count").get_to(t.agents_count);
 
@@ -56,7 +56,7 @@ namespace JsonParser {
 
     using json = nlohmann::json;
 
-    bool ParseInputDataFromJson(const std::string &jsonPath, InputData &arg) {
+    bool ParseInputDataFromJson(const std::string &jsonPath, TInputData &arg) {
         std::ifstream jsonFile(jsonPath);
         if (!jsonFile) {
             std::cerr << "Can`t open input file with problem" << std::endl;
@@ -66,7 +66,7 @@ namespace JsonParser {
         json j;
         jsonFile >> j;
 
-        arg = j.get<InputData>();
+        arg = j.get<TInputData>();
         return true;
     }
 

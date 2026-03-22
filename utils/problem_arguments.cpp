@@ -1,4 +1,5 @@
 #include "problem_arguments.hpp"
+#include "../include/path.hpp"
 #include <unistd.h>
 #include <ostream>
 
@@ -85,14 +86,10 @@ bool ParseProgramArguments(int argc, char *argv[], ProgramArguments &args) {
     return true;
 }
 
-int64_t InputData::get_time_dependent_cost(int64_t time,
-                                           InputData::points_type from,
-                                           InputData::points_type to) const {
+int64_t TInputData::get_time_dependent_cost(int64_t time,
+                                           TInputData::points_type from,
+                                           TInputData::points_type to) const {
 
-    if (is_mapped) {
-        from = from_new_to_old.at(from);
-        to = from_new_to_old.at(to);
-    }
                                             
     if (time >= time_duration * (time_matrix.size() - 1)) {
         return time_matrix[time_matrix.size() - 1][from][to];
@@ -106,46 +103,39 @@ int64_t InputData::get_time_dependent_cost(int64_t time,
 }
 
 std::tuple<int64_t, int64_t, int64_t>
-InputData::get_path_time_distance_score(const std::vector<InputData::points_type> &path) const {
+TInputData::get_path_distance_time_score(const TPath& path) const {
 
-    if (path.size() <= 2) {
-        return std::make_tuple(0, 0, 0);
+    if (path.tour.empty()) {
+        return {0, 0, 0};
     }
 
     int64_t distance = 0;
     int64_t time = 0;
     int64_t score = 0;
 
-    // считаем время и дистанцию с учетом времени обслуживания точек
-    // i -> i + 1
-    // 0 -> 1
-    // 1 -> 2
-    // ...
-    // n -> 0
-    points_type from = 0, to = 0;
-    for (size_t i = 0; i < path.size() - 1; ++i) {
+    const auto depo = path.depo;
 
-        if (is_mapped) {
-            from = from_new_to_old.at(path[i]);
-            to = from_new_to_old.at(path[i + 1]);
+    points_type from = depo, to = 0;
+    for (size_t i = 0; i < path.tour.size() + 1; ++i) {
+        
+        if (i == path.tour.size()) [[unlikely]] {
+            to = depo;
         } else {
-            from = path[i];
-            to = path[i + 1];
+            to = path.tour[i];
         }
 
         distance += distance_matrix[from][to];
-        // функция сама сделает маппинг если is_mapped
-        auto travel_time = get_time_dependent_cost(time + agent_start_time[current_agent], path[i], path[i + 1]);
+        auto travel_time = get_time_dependent_cost(time + agent_start_time[path.agent_idx], from, to);
+        time += (to == depo ? 0 : point_service_times[to - 1]) + travel_time;
+        score += (to == depo ? 0 : point_scores[to - 1]) - travel_time;
 
-        time += (to == 0 ? 0 : point_service_times[to - 1]) + travel_time;
-        // point_scores - свдинуты на 1 индекс, т.к. 0 - депо
-        score += (to == 0 ? 0 : point_scores[to - 1]) - travel_time;
+        from = to;
     }
 
     return std::make_tuple(distance, time, score);
 }
 
-std::ostream &operator<<(std::ostream &os, const InputData &data) {
+std::ostream &operator<<(std::ostream &os, const TInputData &data) {
     os << "points_count: " << data.points_count << "\n";
 
     os << "Agents info:\n";
