@@ -200,7 +200,7 @@ bool TInnerOperations::TwoOpt(TPath& path, const TInputData& inputData, TInnerOp
             std::reverse(path.tour.begin() + i, path.tour.begin() + j + 1);
             auto [distance, time, score] = inputData.get_path_distance_time_score(path);
 
-            if (initial_score < score && distance <= path.max_distance) {
+            if (initial_score < score && distance <= path.max_distance && time <= path.max_time) {
                 found = true;
                 best_two_opt = {
                     .i = i,
