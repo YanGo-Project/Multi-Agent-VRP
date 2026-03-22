@@ -102,7 +102,7 @@ bool TInnerOperations::SwapAny(TPath& path, const TInputData& inputData, TInnerO
             path.tour[i] = std::exchange(path.tour[j], path.tour[i]);
             auto [distance, time, score] = inputData.get_path_distance_time_score(path);
 
-            if (initial_score < score && distance <= path.max_distance) {
+            if (initial_score < score && distance <= path.max_distance && time <= path.max_time) {
                 found = true;
                 best_swap_any = {
                     .i = i,
