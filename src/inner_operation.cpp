@@ -56,7 +56,7 @@ bool TInnerOperations::SwapAdjacent(TPath& path, const TInputData& inputData, TI
         path.tour[i] = std::exchange(path.tour[i + 1], path.tour[i]);
         auto [distance, time, score] = inputData.get_path_distance_time_score(path);
 
-        if (initial_score < score && distance <= path.max_distance) {
+        if (initial_score < score && distance <= path.max_distance && time <= path.max_time) {
             found = true;
             best_swap_adjacent = {
                 .i = i,
