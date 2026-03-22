@@ -38,6 +38,5 @@ endif()
 
 option(SAVE_STEPS "save each 5 seconds" OFF)
 if (SAVE_STEPS)
-    add_definitions(-DCHECK_SWAPS)
     add_definitions(-DSAVE_STEPS)
 endif()
