@@ -6,17 +6,16 @@
 #include <iomanip>
 #include <iostream>
 
-std::ostream& operator<<(std::ostream& os, const TPath& path) {
-    os << "score=" << std::setw(8) << path.score
-       << "  time=" << std::setw(8) << path.time
-       << "  dist=" << std::setw(8) << path.distance
-       << "  stops=" << path.tour.size() << "\n";
-    os << "  route: [depo]";
-    for (auto v : path.tour) {
-        os << " -> " << v;
-    }
-    os << " -> [depo]\n";
-    return os;
+bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
+                                   EInterOperation operation) {
+    static constexpr TOperationFn kOperations[] = {
+        &TInterOperations::Relocate,    // 0
+        &TInterOperations::Swap,        // 1
+        &TInterOperations::TwoOpt,      // 2
+        &TInterOperations::Cross,       // 3
+    };
+    RejectStats stats{};
+    return (this->*kOperations[static_cast<uint8_t>(operation)])(path1, path2, inputData, stats);
 }
 
 bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData, RejectStats& stats) {
@@ -53,14 +52,11 @@ bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &in
                 dst.tour.insert(dst.tour.begin() + to, element);
 
                 auto [distance2, time2, score2] = inputData.get_path_distance_time_score(dst);
+                
+                if (distance1 <= path1.max_distance && distance2 <= path2.max_distance && 
+                    time1 <= path1.max_time && time2 <= path2.max_time && 
+                    score1 + score2 > initial_score) {
 
-                if (distance1 >= src.max_distance || distance2 >= dst.max_distance) {
-                    ++stats.dist_exceed;
-                } else if (time1 >= src.max_time || time2 >= dst.max_time) {
-                    ++stats.time_exceed;
-                } else if (score1 + score2 <= initial_score) {
-                    ++stats.no_gain;
-                } else {
                     found = true;
                     best_relocation = {
                         .from_first   = from_first,
@@ -122,15 +118,6 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
     bool found = false;
     best_operation best_swap{};
 
-#ifdef DEBUG_SWAP
-    int debug_printed = 0;
-    int kDebugMaxPrint = 5;
-    std::cout << "[DebugSwap] path1: time=" << path1.time << "/" << path1.max_time
-              << "  slack=" << (path1.max_time - path1.time)
-              << "  path2: time=" << path2.time << "/" << path2.max_time
-              << "  slack=" << (path2.max_time - path2.time) << "\n";
-#endif
-
     for (size_t path1_idx = 0; path1_idx < path1.tour.size(); ++path1_idx) {
         for (size_t path2_idx = 0; path2_idx < path2.tour.size(); ++path2_idx) {
 
@@ -142,32 +129,10 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
             auto [distance1, time1, score1] = inputData.get_path_distance_time_score(path1);
             auto [distance2, time2, score2] = inputData.get_path_distance_time_score(path2);
 
-#ifdef DEBUG_SWAP
-                const auto slack1 = path1.max_time - path1.time;
-                const auto slack2 = path2.max_time - path2.time;
-                const char* reason = "OK";
-                if (distance1 >= path1.max_distance || distance2 >= path2.max_distance) reason = "dist_exceed";
-                else if (time1 >= path1.max_time || time2 >= path2.max_time)             reason = "time_exceed";
-                else if (score1 + score2 <= initial_score)                               reason = "no_gain";
-                if (debug_printed < kDebugMaxPrint || strcmp(reason, "OK") == 0) {
-                    std::cout << "[DebugSwap]   swap v1=" << v1 << "@pos" << path1_idx
-                              << " <-> v2=" << v2 << "@pos" << path2_idx
-                              << " | p1: " << path1.time << "->" << time1
-                              << " (slack было " << slack1 << ", стало " << (path1.max_time - time1) << ")"
-                              << " | p2: " << path2.time << "->" << time2
-                              << " (slack было " << slack2 << ", стало " << (path2.max_time - time2) << ")"
-                              << " | " << reason << "\n";
-                    ++debug_printed;
-                }
-#endif
+            if (distance1 <= path1.max_distance && distance2 <= path2.max_distance && 
+                time1 <= path1.max_time && time2 <= path2.max_time && 
+                score1 + score2 > initial_score) {
 
-            if (distance1 >= path1.max_distance || distance2 >= path2.max_distance) {
-                ++stats.dist_exceed;
-            } else if (time1 >= path1.max_time || time2 >= path2.max_time) {
-                ++stats.time_exceed;
-            } else if (score1 + score2 <= initial_score) {
-                ++stats.no_gain;
-            } else {
                 found = true;
                 best_swap = {
                     .path1_idx = path1_idx,
@@ -249,13 +214,10 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
             std::swap(path1.tour, new_tour1);
             std::swap(path2.tour, new_tour2);
 
-            if (distance1 >= path1.max_distance || distance2 >= path2.max_distance) {
-                ++stats.dist_exceed;
-            } else if (time1 >= path1.max_time || time2 >= path2.max_time) {
-                ++stats.time_exceed;
-            } else if (score1 + score2 <= initial_score) {
-                ++stats.no_gain;
-            } else {
+            if (distance1 <= path1.max_distance && distance2 <= path2.max_distance && 
+                time1 <= path1.max_time && time2 <= path2.max_time && 
+                score1 + score2 > initial_score) {
+
                 found = true;
                 best_two_opt = {
                     .split1    = split1,
@@ -338,13 +300,10 @@ bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &input
                     path2.tour.begin() + start2
                 );
 
-                if (distance1 >= path1.max_distance || distance2 >= path2.max_distance) {
-                    ++stats.dist_exceed;
-                } else if (time1 >= path1.max_time || time2 >= path2.max_time) {
-                    ++stats.time_exceed;
-                } else if (score1 + score2 <= initial_score) {
-                    ++stats.no_gain;
-                } else {
+                if (distance1 <= path1.max_distance && distance2 <= path2.max_distance && 
+                    time1 <= path1.max_time && time2 <= path2.max_time && 
+                    score1 + score2 > initial_score) {
+    
                     found = true;
                     best_cross = {
                         .seg_len   = seg_len,
@@ -379,99 +338,4 @@ bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &input
     }
 
     return found;
-}
-
-void TInterOperations::RunLocalSearch(std::vector<TPath>& paths,
-                                      const TInputData&   inputData,
-                                      int                 max_no_improvement) {
-    assert(max_no_improvement > 0);
-
-    static constexpr TOperationFn kOperations[] = {
-        &TInterOperations::Relocate,
-        &TInterOperations::Swap,
-        &TInterOperations::TwoOpt,
-        &TInterOperations::Cross,
-    };
-    static constexpr const char* kOperationNames[] = {
-        "Relocate", "Swap", "TwoOpt", "Cross",
-    };
-    static constexpr int kOperationsCount = static_cast<int>(std::size(kOperations));
-
-    std::mt19937 rng{std::random_device{}()};
-    std::uniform_int_distribution<size_t> path_dist(0, paths.size() - 1);
-    std::uniform_int_distribution<int>    op_dist(0, kOperationsCount - 1);
-
-    int no_improvement_streak = 0;
-    int total_attempts        = 0;
-    int total_improvements    = 0;
-
-    // статистика улучшений по каждой операции
-    int op_improvements[kOperationsCount] = {};
-
-    std::cout << "[LocalSearch] start  total_score="
-              << [&] {
-                     int64_t s = 0;
-                     for (auto& p : paths) s += p.score;
-                     return s;
-                 }()
-              << "  K=" << max_no_improvement << "\n";
-
-    while (no_improvement_streak < max_no_improvement) {
-        size_t i = path_dist(rng);
-        size_t j = path_dist(rng);
-        while (j == i) {
-            j = path_dist(rng);
-        }
-
-        const int     op_idx      = op_dist(rng);
-        const int64_t score_before = paths[i].score + paths[j].score;
-
-        RejectStats stats{};
-        const bool improved = (this->*kOperations[op_idx])(paths[i], paths[j], inputData, stats);
-        ++total_attempts;
-
-        if (improved) {
-            const int64_t score_after = paths[i].score + paths[j].score;
-            const int64_t delta       = score_after - score_before;
-
-            ++total_improvements;
-            ++op_improvements[op_idx];
-            no_improvement_streak = 0;
-
-            std::cout << "[LocalSearch] #" << std::setw(4) << total_attempts
-                      << "  " << std::setw(8) << std::left << kOperationNames[op_idx] << std::right
-                      << "  agents=(" << i << "," << j << ")"
-                      << "  delta=" << std::showpos << delta << std::noshowpos
-                      << "  score_after=" << score_after
-                      << "  streak_reset\n";
-        } else {
-            ++no_improvement_streak;
-
-#ifdef DEBUG_LOCAL_SEARCH
-            std::cout << "[LocalSearch] #" << std::setw(4) << total_attempts
-                      << "  " << std::setw(8) << std::left << kOperationNames[op_idx] << std::right
-                      << "  agents=(" << i << "," << j << ")"
-                      << "  FAIL"
-                      << "  vertex_limit=" << stats.vertex_limit
-                      << "  time_exceed="  << stats.time_exceed
-                      << "  dist_exceed="  << stats.dist_exceed
-                      << "  no_gain="      << stats.no_gain
-                      << "  streak=" << no_improvement_streak << "/" << max_no_improvement << "\n";
-#endif        
-        }
-    }
-
-    // итоговая статистика
-    int64_t total_score = 0;
-    for (auto& p : paths) total_score += p.score;
-
-    std::cout << "[LocalSearch] done"
-              << "  attempts="    << total_attempts
-              << "  improvements=" << total_improvements
-              << "  total_score=" << total_score << "\n";
-    std::cout << "[LocalSearch] improvements by operation:\n";
-    for (int k = 0; k < kOperationsCount; ++k) {
-        std::cout << "    " << std::setw(8) << std::left << kOperationNames[k] << std::right
-                  << " : " << op_improvements[k] << "\n";
-    }
 }

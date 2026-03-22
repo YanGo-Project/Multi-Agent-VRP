@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(nlohmann_json REQUIRED)
 
-# add_compile_options(-O3)
-add_compile_options(-O0 -g)
+add_compile_options(-O3)
+# add_compile_options(-O0 -g)
 
 set(UTILS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/utils")
 set(UTILS_SOURCES
@@ -19,6 +19,8 @@ set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(SRC_SOURCES
         "${SRC_DIR}/first_step.cpp"
         "${SRC_DIR}/inter_operation.cpp"
+        "${SRC_DIR}/inner_operation.cpp"
+        "${SRC_DIR}/algorithm.cpp"
 )
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
