@@ -70,7 +70,8 @@ struct TInputData {
     std::map<points_type, points_type> from_new_to_old{};
 
     /// meta информация для многоагентного варианта
-    std::unordered_set<points_type> visited_points{};
+    mutable std::unordered_set<points_type> visited_points{};
+    mutable std::vector<points_type> unvisited_points;
     points_type current_agent{};
     bool is_mapped = false;
 };

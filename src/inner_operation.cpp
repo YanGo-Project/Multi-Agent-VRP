@@ -5,17 +5,32 @@
 #include <iostream>
 #include <vector>
 #include <utility>
+#include <random>
+
+namespace {
+
+    using points_type = TRoute::value_type;
+
+    std::vector<points_type> ChooseUnvisitedVertexes(const TInputData& input, size_t vertexes) {
+        static std::mt19937 rng{std::random_device{}()};
+        vertexes = std::min(vertexes, input.unvisited_points.size());
+
+        std::shuffle(input.unvisited_points.begin(), input.unvisited_points.end(), rng);
+        std::vector<points_type> chosen(input.unvisited_points.begin(), input.unvisited_points.begin() + vertexes);
+        return chosen;
+    }
+}
 
 std::ostream& operator<<(std::ostream& os, const TPath& path) {
-    os << "score=" << std::setw(8) << path.score
-       << "  time=" << std::setw(8) << path.time
-       << "  dist=" << std::setw(8) << path.distance
-       << "  stops=" << path.tour.size() << "\n";
-    os << "  route: [depo]";
+    os << "score=" << path.score
+       << "\ttime=" << path.time
+       << "\tdist=" << path.distance
+       << "\tstops=" << path.tour.size() << "\n";
+    os << "\troute: 0";
     for (auto v : path.tour) {
-        os << " -> " << v;
+        os << "," << v;
     }
-    os << " -> [depo]\n";
+    os << ",0\n";
     return os;
 }
 
@@ -27,6 +42,7 @@ bool TInnerOperations::DoOperation(TPath& path, const TInputData& inputData,
         &TInnerOperations::Shift,         // 2
         &TInnerOperations::TwoOpt,        // 3
         &TInnerOperations::OrOpt,         // 4
+        &TInnerOperations::PickUnvisited  // 5
     };
 
     constexpr std::size_t kOperationsCount = sizeof(kOperations) / sizeof(kOperations[0]);
@@ -279,6 +295,63 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
         path.distance = best.distance;
         path.time     = best.time;
         path.score    = best.score;
+    }
+
+    return found;
+}
+
+// пытается добавить в путь ещё непосещённую никем вершину
+bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
+
+    if (path.tour.size() == path.max_vertexes) {
+        return false;
+    }
+
+    auto initial_score = path.score;
+
+    auto candidates = ChooseUnvisitedVertexes(inputData, std::max(context.unvisiedCandidatesCount, 1ul));
+
+    struct best_operation {
+        TRoute::value_type vertex;
+        size_t to;
+        int64_t distance;
+        int64_t time;
+        int64_t score;
+    };
+
+    bool found = false;
+    best_operation best{};
+
+    for (auto candidate : candidates) {
+        for (size_t to = 0; to < path.tour.size(); ++to) {
+            path.tour.insert(path.tour.begin() + to, candidate);
+            auto [distance, time, score] = inputData.get_path_distance_time_score(path);
+            if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
+                found = true;
+                best = {.vertex = candidate, .to = to, .distance = distance, .time = time, .score = score};
+                initial_score = score;
+            }
+            path.tour.erase(path.tour.begin() + to);
+        }
+    }
+
+    if (found) {
+
+        std::cout << "Added new vertex for tour: " << path << "\n and vertex: " << best.vertex << "\n";
+
+        path.tour.insert(path.tour.begin() + best.to, best.vertex);
+        path.distance = best.distance;
+        path.time     = best.time;
+        path.score    = best.score;
+
+        inputData.visited_points.insert(best.vertex);
+        auto it = std::find_if(inputData.unvisited_points.begin(), inputData.unvisited_points.end(),
+            [&](const auto m) { return m == best.vertex; });
+        if (it == inputData.unvisited_points.end()) { [[unlikely]]
+            std::cout << "Error -- want delete already visited point: " <<best.vertex << " for agent #" << path.agent_idx << "\n"; 
+        } else {
+            inputData.unvisited_points.erase(it);
+        }
     }
 
     return found;

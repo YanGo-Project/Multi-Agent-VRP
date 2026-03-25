@@ -6,27 +6,43 @@
 #include <random>
 #include <thread>
 #include <vector>
+#include <mutex>
 
 #include <iostream>
 
 namespace {
 
+std::mutex unvisited_mutex;
+
 bool DoInnerOptimization(TPath& path, const TInputData& inputData, const OptimizationContext& context) {
     size_t no_improve   = 0;
     bool any_improved = false;
-
+    
     std::mt19937 rng{std::random_device{}()};
     std::uniform_int_distribution<uint8_t> op_dist(0, TInnerOperations::kInnerOperationsCount - 1);
 
     TInnerOperations inner_ops;
+    const size_t or_opt_size = std::min(no_improve + 2, context.max_or_opt_size);
+    const size_t unvisited_candidates = std::max(context.unvisited_candidates, 1ul);
 
     while (no_improve < context.inner_iterations_without_improve) {
-        const size_t or_opt_size = std::min(no_improve + 2, context.max_or_opt_size);
 
-        TInnerOperations::TInnerOperationContext inner_operation_context{.orOptSize = or_opt_size};
-
+        TInnerOperations::TInnerOperationContext inner_operation_context{.orOptSize = or_opt_size, .unvisiedCandidatesCount = unvisited_candidates};
         TInnerOperations::EInnerOperation inner_operation = static_cast<TInnerOperations::EInnerOperation>(op_dist(rng));
-        const bool improved = inner_ops.DoOperation(path, inputData, inner_operation_context, inner_operation);
+
+        bool improved = false;
+
+        if (inner_operation == TInnerOperations::EInnerOperation::PickUnvisited) {
+            if (unvisited_mutex.try_lock()) {
+                // std::cout << "Try pick unvisited\n";
+                improved = inner_ops.DoOperation(path, inputData, inner_operation_context, inner_operation);
+                unvisited_mutex.unlock();
+            } else {
+                continue;
+            }
+        } else {
+            improved = inner_ops.DoOperation(path, inputData, inner_operation_context, inner_operation);
+        }
 
         if (improved) {
             no_improve   = 0;
@@ -47,7 +63,7 @@ bool DoInterOptimization(TPath& path1, TPath& path2, const TInputData& inputData
     TInterOperations inter_ops;
     auto dst = op_dist(rng);
     const auto op = static_cast<TInterOperations::EInterOperation>(dst);
-    std::cout << "InterOperation: " << (uint32_t)dst << std::endl;
+    // std::cout << "InterOperation: " << (uint32_t)dst << std::endl;
     return inter_ops.DoOperation(path1, path2, inputData, op);
 }
 
@@ -73,9 +89,6 @@ void Optimize(std::vector<TPath>& paths, const TInputData& inputData, const Opti
     };
 
     while (no_improve < context.inter_iterations_without_improve) {
-
-        std::cout << "Iterations withou improve: " << no_improve << "\n";
-        print_paths();
 
         std::vector<std::thread> threads;
         threads.reserve(paths.size());
@@ -104,10 +117,6 @@ void Optimize(std::vector<TPath>& paths, const TInputData& inputData, const Opti
 
         if (inter_ok || any_inner_ok) {
             no_improve = 0;
-            std::cout << "-------------------------------------------------------\n";
-            std::cout << "Improved: " << inter_ok << " " << any_inner_ok << " for path1 and path2: " << path1 << " " << path2 << "\n"; 
-            print_paths();
-            std::cout << "-------------------------------------------------------\n";
         } else {
             ++no_improve;
         }

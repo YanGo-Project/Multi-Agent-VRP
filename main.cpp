@@ -18,7 +18,7 @@
 using Solution = std::vector<FirstStepAnswer>;
 
 
-Solution Solve(TInputData& input, const ProgramArguments& args) {
+Solution FisrtStep(TInputData& input, const ProgramArguments& args) {
 
     std::vector<FirstStepAnswer> firstStepAnswers;
     firstStepAnswers.resize(input.agents_count);
@@ -53,6 +53,16 @@ Solution Solve(TInputData& input, const ProgramArguments& args) {
     return firstStepAnswers;
 }
 
+void ConstructUnvisitedVertexes(TInputData& input) {
+    input.unvisited_points.reserve(input.points_count - input.visited_points.size());
+    for (TInputData::points_type i = 0; i < input.points_count; ++i) {
+        if (input.visited_points.find(i) == input.visited_points.end() &&
+            i != 0) { 
+            input.unvisited_points.push_back(i);
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     ProgramArguments args;
     if (!ParseProgramArguments(argc, argv, args)) {
@@ -64,9 +74,10 @@ int main(int argc, char *argv[]) {
         return -2;
     }
 
-    std::cout << input;
+    // std::cout << input;
 
-    auto firstStepAnswers = Solve(input, args);
+    auto firstStepAnswers = FisrtStep(input, args);
+    ConstructUnvisitedVertexes(input);
 
     // строим TPath из результатов первого шага
     // vertexes имеет вид [0 (депо), v1, v2, ..., vn, 0 (депо)] — обрезаем оба конца
@@ -114,6 +125,7 @@ int main(int argc, char *argv[]) {
         .inner_iterations_without_improve = 200,
         .inter_iterations_without_improve = static_cast<size_t>(args.meta.max_iter_without_solution),
         .max_or_opt_size                  = 10,
+        .unvisited_candidates             = 10,
     };
     Optimize(paths, input, opt_ctx);
     print_paths("After local search");
