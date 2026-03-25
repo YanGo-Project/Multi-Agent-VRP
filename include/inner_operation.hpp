@@ -22,7 +22,7 @@ public:
 
     struct TInnerOperationContext {
         size_t orOptSize;
-        size_t unvisiedCandidatesCount;
+        size_t unvisitedCandidatesCount;
     };
 
     bool DoOperation(TPath& path, const TInputData& inputData, TInnerOperationContext& context, EInnerOperation operation);
