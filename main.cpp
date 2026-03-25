@@ -18,7 +18,7 @@
 using Solution = std::vector<FirstStepAnswer>;
 
 
-Solution FisrtStep(TInputData& input, const ProgramArguments& args) {
+Solution FirstStep(TInputData& input, const ProgramArguments& args) {
 
     std::vector<FirstStepAnswer> firstStepAnswers;
     firstStepAnswers.resize(input.agents_count);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     // std::cout << input;
 
-    auto firstStepAnswers = FisrtStep(input, args);
+    auto firstStepAnswers = FirstStep(input, args);
     ConstructUnvisitedVertexes(input);
 
     // строим TPath из результатов первого шага
