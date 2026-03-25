@@ -23,7 +23,7 @@ bool DoInnerOptimization(TPath& path, const TInputData& inputData, const Optimiz
 
     TInnerOperations inner_ops;
     const size_t or_opt_size = std::min(no_improve + 2, context.max_or_opt_size);
-    const size_t unvisited_candidates = std::max(context.unvisited_candidates, 1ul);
+    const size_t unvisited_candidates = std::max(context.unvisited_candidates, size_t{1});
 
     while (no_improve < context.inner_iterations_without_improve) {
 
