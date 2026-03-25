@@ -54,6 +54,7 @@ Solution FisrtStep(TInputData& input, const ProgramArguments& args) {
 }
 
 void ConstructUnvisitedVertexes(TInputData& input) {
+    input.unvisited_points.clear();
     input.unvisited_points.reserve(input.points_count - input.visited_points.size());
     for (TInputData::points_type i = 0; i < input.points_count; ++i) {
         if (input.visited_points.find(i) == input.visited_points.end() &&
