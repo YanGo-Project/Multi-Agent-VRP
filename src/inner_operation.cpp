@@ -5,6 +5,21 @@
 #include <iostream>
 #include <vector>
 #include <utility>
+#include <random>
+
+namespace {
+
+    using points_type = TRoute::value_type;
+
+    std::vector<points_type> ChooseUnvisitedVertexes(const TInputData& input, size_t vertexes) {
+        static std::mt19937 rng{std::random_device{}()};
+        vertexes = std::min(vertexes, input.unvisited_points.size());
+
+        std::shuffle(input.unvisited_points.begin(), input.unvisited_points.end(), rng);
+        std::vector<points_type> chosen(input.unvisited_points.begin(), input.unvisited_points.begin() + vertexes);
+        return chosen;
+    }
+}
 
 std::ostream& operator<<(std::ostream& os, const TPath& path) {
     os << "score=" << path.score
