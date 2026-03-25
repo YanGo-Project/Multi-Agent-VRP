@@ -6,6 +6,7 @@
 
 #include "include/first_step.hpp"
 #include "include/inter_operation.hpp"
+#include "include/algorithm.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -109,9 +110,12 @@ int main(int argc, char *argv[]) {
 
     print_paths("First step results");
 
-    TInterOperations ops;
-
-    ops.RunLocalSearch(paths, input, args.meta.max_iter_without_solution);
+    OptimizationContext opt_ctx{
+        .inner_iterations_without_improve = 200,
+        .inter_iterations_without_improve = static_cast<size_t>(args.meta.max_iter_without_solution),
+        .max_or_opt_size                  = 10,
+    };
+    Optimize(paths, input, opt_ctx);
     print_paths("After local search");
 
     return 0;

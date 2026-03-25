@@ -1,7 +1,5 @@
 #pragma once
 
-#include <functional>
-#include <random>
 #include <vector>
 
 #include "path.hpp"
@@ -9,23 +7,24 @@
 
 class TInterOperations {
 public:
-    enum class EOperation {
+    enum class EInterOperation : uint8_t {
         Relocate = 0,
         Swap     = 1,
         TwoOpt   = 2,
         Cross    = 3,
     };
 
-    void RunLocalSearch(std::vector<TPath>& paths,
-                        const TInputData&   inputData,
-                        int                 max_no_improvement);
+    static constexpr int kInterOperationsCount = 4;
 
     struct RejectStats {
-        int vertex_limit = 0;   ///< заблокировано ограничением min/max вершин до перебора
-        int time_exceed  = 0;   ///< кандидат нарушил max_time
-        int dist_exceed  = 0;   ///< кандидат нарушил max_distance
-        int no_gain      = 0;   ///< кандидат допустим, но score не вырос
+        int vertex_limit = 0;
+        int time_exceed  = 0;
+        int dist_exceed  = 0;
+        int no_gain      = 0;
     };
+
+    bool DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
+                     EInterOperation operation);
 
 private:
     using TOperationFn = bool (TInterOperations::*)(TPath&, TPath&, const TInputData&, RejectStats&);
