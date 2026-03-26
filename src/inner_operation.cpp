@@ -336,9 +336,6 @@ bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, T
     }
 
     if (found) {
-
-        std::cout << "Added new vertex for tour: " << path << "\n and vertex: " << best.vertex << "\n";
-
         path.tour.insert(path.tour.begin() + best.to, best.vertex);
         path.distance = best.distance;
         path.time     = best.time;

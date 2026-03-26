@@ -59,6 +59,8 @@ struct TInputData {
     /// массив времён на обслуживание каждой точки, кроме склада.
     /// Размерность массива @points_count - 1.
     std::vector<int64_t> point_service_times;
+    /// массив который указывает какая вершина является депо у агентов
+    std::vector<points_type> agent_depots;
 
     /// 30 минут в секундах для TD цены перехода
     static constexpr int64_t time_duration = 30 * 60;
@@ -72,8 +74,7 @@ struct TInputData {
     /// meta информация для многоагентного варианта
     mutable std::unordered_set<points_type> visited_points{};
     mutable std::vector<points_type> unvisited_points;
-    points_type current_agent{};
-    bool is_mapped = false;
+    std::unordered_set<points_type> depots_set;
 };
 
 std::ostream &operator<<(std::ostream &os, const TInputData &data);

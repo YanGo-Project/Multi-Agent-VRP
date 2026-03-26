@@ -24,17 +24,16 @@ Solution FisrtStep(TInputData& input, const ProgramArguments& args) {
     firstStepAnswers.resize(input.agents_count);
 
     for (size_t i = 0; i < input.agents_count; ++i) {
-        input.current_agent = i;
 
         std::vector<FirstStepAnswer> result;
         if (input.points_count < 128) {
-            result = DoFirstStep<128, true>(input);
+            result = DoFirstStep<128, true>(input, i);
         } else if (input.points_count < 256) {
-            result = DoFirstStep<256, true>(input);
+            result = DoFirstStep<256, true>(input, i);
         } else if (input.points_count < 512) {
-            result = DoFirstStep<512, true>(input);
+            result = DoFirstStep<512, true>(input, i);
         } else {
-            result = DoFirstStep<std::numeric_limits<TInputData::points_type>::max(), true>(input);
+            result = DoFirstStep<std::numeric_limits<TInputData::points_type>::max(), true>(input, i);
         }
 
         if (result.empty()) {
@@ -57,7 +56,7 @@ void ConstructUnvisitedVertexes(TInputData& input) {
     input.unvisited_points.reserve(input.points_count - input.visited_points.size());
     for (TInputData::points_type i = 0; i < input.points_count; ++i) {
         if (input.visited_points.find(i) == input.visited_points.end() &&
-            i != 0) { 
+            input.depots_set.find(i) == input.depots_set.end()) { 
             input.unvisited_points.push_back(i);
         }
     }
@@ -74,29 +73,17 @@ int main(int argc, char *argv[]) {
         return -2;
     }
 
-    // std::cout << input;
-
     auto firstStepAnswers = FisrtStep(input, args);
     ConstructUnvisitedVertexes(input);
 
-    // строим TPath из результатов первого шага
-    // vertexes имеет вид [0 (депо), v1, v2, ..., vn, 0 (депо)] — обрезаем оба конца
     std::vector<TPath> paths;
     paths.reserve(firstStepAnswers.size());
 
     for (uint32_t i = 0; i < firstStepAnswers.size(); ++i) {
         auto& ans = firstStepAnswers[i];
 
-        TRoute route = std::move(ans.vertexes);
-        if (route.size() >= 2) {
-            route.erase(route.begin());  // убираем стартовый депо
-            route.pop_back();            // убираем финальный депо
-        } else {
-            route.clear();
-        }
-
         paths.push_back(TPath{
-            .tour         = std::move(route),
+            .tour         = std::move(ans.vertexes),
             .distance     = ans.distance,
             .time         = ans.time,
             .score        = ans.value,
@@ -104,7 +91,7 @@ int main(int argc, char *argv[]) {
             .max_time     = input.max_time[i],
             .max_vertexes = input.max_load[i],
             .min_vertexes = input.min_load[i],
-            .depo         = 0,
+            .depo         = input.agent_depots[i],
             .agent_idx    = i,
         });
     }
