@@ -125,16 +125,17 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
         std::vector<std::vector<Candidate<bitset_size>>>(points_count)
     );
 
+    // депо текущего агента
+    const auto agent_depo = input.agent_depots[agent];
+
     // инициализация начального состояния
     Candidate<bitset_size> initial;
     initial.value = 0;
     initial.time = 0;
     initial.distance = 0;
     initial.load = -1;
-    dp[0][0].push_back(std::move(initial));
+    dp[agent_depo][0].push_back(std::move(initial));
 
-    // депо текущего агента
-    const auto agent_depo = input.agent_depots[agent];
 
     std::vector<Candidate<bitset_size>> candidates;
     candidates.reserve(TOP_SOLUTIONS_COUNT);
@@ -188,10 +189,8 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
                                 travel_time = input.time_matrix[0][last_vertex][to_vertex];
                             }
 
-                            auto new_point_score = prev_solution.value + (to_vertex == 0 ? 0 : input.point_scores[to_vertex - 1]) -
-                                                   travel_time;
-                            auto new_point_time = prev_solution.time + (to_vertex == 0 ? 0 : input.point_service_times[to_vertex - 1]) +
-                                                  travel_time;
+                            auto new_point_score = prev_solution.value + input.point_scores[to_vertex] - travel_time;
+                            auto new_point_time = prev_solution.time + input.point_service_times[to_vertex - 1] + travel_time;
                             auto new_point_dist = prev_solution.distance + input.distance_matrix[last_vertex][to_vertex];
 
                             // проверки найденного пути на целевую функцию, максимальное время пути и максимальную дистанцию

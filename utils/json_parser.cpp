@@ -16,7 +16,7 @@ namespace nlohmann {
         if (j.contains("depots")) {
             j.at("depots").get_to(t.agent_depots);
         } else {
-            // Default start times to 0 for each agent if the field is missing
+            // Default depots to 0 for each agent if the field is missing
             t.agent_depots = decltype(t.agent_depots)(t.agents_count, 0);
         }
 

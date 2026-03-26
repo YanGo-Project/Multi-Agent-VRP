@@ -76,8 +76,6 @@ int main(int argc, char *argv[]) {
     auto firstStepAnswers = FisrtStep(input, args);
     ConstructUnvisitedVertexes(input);
 
-    // строим TPath из результатов первого шага
-    // vertexes имеет вид [(депо), v1, v2, ..., vn, (депо)] — обрезаем оба конца
     std::vector<TPath> paths;
     paths.reserve(firstStepAnswers.size());
 
