@@ -134,7 +134,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
     initial.time = 0;
     initial.distance = 0;
     initial.load = -1;
-    dp[agent_depo][0].push_back(std::move(initial));
+    dp[0][agent_depo].push_back(std::move(initial));
 
 
     std::vector<Candidate<bitset_size>> candidates;
