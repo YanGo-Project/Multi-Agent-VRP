@@ -20,7 +20,7 @@ struct FirstStepAnswer {
     score_type distance = 0;
     score_type time = 0;
     /// список вершин в порядке обхода в пути
-    std::vector<points_type> vertexes{0};
+    std::vector<points_type> vertexes{};
 
     std::string get_data_to_csv() const {
         return std::to_string(value) + "," + std::to_string(time) + "," + std::to_string(distance);
@@ -37,7 +37,7 @@ struct FirstStepAnswer {
 };
 
 template<size_t bitset_size = std::numeric_limits<TInputData::points_type>::max(), bool is_time_dependent = false>
-std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input);
+std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t agent);
 
 std::ostream &operator<<(std::ostream &os, const FirstStepAnswer &answer);
 
