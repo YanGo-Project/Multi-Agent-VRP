@@ -5,8 +5,6 @@
 #endif
 
 #include "include/first_step.hpp"
-#include "include/inter_operation.hpp"
-#include "include/inner_operation.hpp"
 #include "include/algorithm.hpp"
 
 #include <iostream>
@@ -19,6 +17,23 @@
 using Solution = std::vector<FirstStepAnswer>;
 
 std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& firstStep, TInputData& input, const uint32_t agent){
+
+    if (firstStep.empty()) { [[unlikely]]
+        return {
+            TPath{
+                .distance     = 0,
+                .time         = 0,
+                .score        = std::numeric_limits<TPath::score_type>::min() + 1,
+                .max_distance = input.max_distance[agent],
+                .max_time     = input.max_time[agent],
+                .max_vertexes = input.max_load[agent],
+                .min_vertexes = input.min_load[agent],
+                .depo         = input.agent_depots[agent],
+                .agent_idx    = agent,
+            }
+        };
+    }
+
     std::vector<TPath> paths;
     paths.reserve(firstStep.size());
 
@@ -41,10 +56,6 @@ std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& f
 }
 
 TPath ChooseBestCandidatePath(std::vector<FirstStepAnswer>&& candidates, TInputData& input, const OptimizationContext& ctx, uint32_t agent) {
-
-    if (candidates.empty()) { [[unlikely]]
-        return {};
-    }
     
     auto paths = ConstructPathsFromCandidates(std::move(candidates), input, agent);
 
