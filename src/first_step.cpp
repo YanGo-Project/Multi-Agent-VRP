@@ -11,18 +11,13 @@ namespace {
     using score_type = FirstStepAnswer::score_type;
     using points_type = FirstStepAnswer::points_type;
 
-    template <size_t bitset_size = std::numeric_limits<points_type>::max()>
     struct Candidate {
-        static constexpr size_t MAX_POINTS = bitset_size;
-
-        // посещения в пути, вершина с индексом i лежит в ячейке visited[i],
-        // чтобы не было коллизий с депо
-        std::bitset<MAX_POINTS> visited;
-
         // информация о метриках
         score_type value;
         score_type time;
         score_type distance;
+
+        points_type depo;
 
         int64_t load;
 
@@ -30,13 +25,55 @@ namespace {
         size_t candidate_idx;
         points_type last_vertex;
 
-        inline bool IsVertexInPath(const points_type id) const {
-            return visited[id];
+        std::set<points_type> GetPathSet(const std::vector<std::vector<std::vector<Candidate>>>& dp) const {
+
+            std::set<points_type> pathSet;
+
+            auto next_load = load;
+            auto next_vertex = last_vertex;
+            auto next_candidate_idx = candidate_idx;
+
+            while (next_load > 0) {
+
+                if (next_vertex != depo) {
+                    pathSet.insert(next_vertex);
+                }
+
+                const auto& cand = dp[next_load][next_vertex][next_candidate_idx];
+
+                next_load -= 1;
+                next_vertex = cand.last_vertex;
+                next_candidate_idx = cand.candidate_idx;
+            }
+            return pathSet;
         }
 
-        FirstStepAnswer CreateAnswer(const std::vector<std::vector<std::vector<Candidate<bitset_size>>>>& dp, const points_type depo) const {
+        inline bool IsVertexInPath(const std::vector<std::vector<std::vector<Candidate>>>& dp, const points_type vertex) const {
+
+            auto pathSet = GetPathSet(dp);
+
+            return pathSet.find(vertex) == pathSet.end();
+        }
+
+        inline bool IsSamePathSet(const std::vector<std::vector<std::vector<Candidate>>>& dp, const Candidate& other) const {
+            auto pathSet1 = GetPathSet(dp);
+            auto pathSet2 = other.GetPathSet(dp);
+
+            if (pathSet1.size() != pathSet2.size()) {
+                return false;
+            }
+
+            for (auto vertex: pathSet1) {
+                if (pathSet2.find(vertex) == pathSet2.end()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        FirstStepAnswer CreateAnswer(const std::vector<std::vector<std::vector<Candidate>>>& dp) const {
             FirstStepAnswer answer;
-            answer.vertexes.reserve(visited.count());
+            answer.vertexes.reserve(load);
             answer.value = value;
             answer.time = time;
             answer.distance = distance;
@@ -63,8 +100,7 @@ namespace {
         }
     };
 
-    template <size_t bitset_size>
-    inline bool IsCandidateGood(const std::vector<Candidate<bitset_size>>& candidates, score_type value) {
+    inline bool IsCandidateGood(const std::vector<Candidate>& candidates, score_type value) {
         if (candidates.empty() || candidates.size() < TOP_SOLUTIONS_COUNT) [[unlikely]] {
             return true;
         }
@@ -72,12 +108,15 @@ namespace {
         return value > candidates.back().value;
     }
     
-    template <size_t bitset_size>
-    inline void InsertTopCandidate(std::vector<Candidate<bitset_size>>& candidates, Candidate<bitset_size>&& newCandidate) {
+    inline void InsertTopCandidate(
+        const std::vector<std::vector<std::vector<Candidate>>>& dp,
+        std::vector<Candidate>& candidates, 
+        Candidate&& newCandidate
+    ) {
 
         bool duplicated = false;
         for (auto& existed_candidate : candidates) {
-            if (existed_candidate.visited == newCandidate.visited) {
+            if (existed_candidate.IsSamePathSet(dp, newCandidate)) {
                 if (existed_candidate.value < newCandidate.value) {
                     std::swap(existed_candidate, newCandidate);
                 } else {
@@ -106,7 +145,7 @@ namespace {
 
 }
 
-template<size_t bitset_size, bool is_time_dependent>
+template<bool is_time_dependent>
 std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t agent) {
 
     using score_type = FirstStepAnswer::score_type;
@@ -120,24 +159,26 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
     auto points_count = input.points_count;
 
     // dp теперь хранит векторы сжатых представлений решений для каждого состояния
-    std::vector<std::vector<std::vector<Candidate<bitset_size>>>> dp(
+    std::vector<std::vector<std::vector<Candidate>>> dp(
         max_load + 2,
-        std::vector<std::vector<Candidate<bitset_size>>>(points_count)
+        std::vector<std::vector<Candidate>>(points_count)
     );
 
     // депо текущего агента
     const auto agent_depo = input.agent_depots[agent];
 
     // инициализация начального состояния
-    Candidate<bitset_size> initial;
-    initial.value = 0;
-    initial.time = 0;
-    initial.distance = 0;
-    initial.load = -1;
+    Candidate initial {
+        .value = 0,
+        .time = 0,
+        .distance = 0,
+        .load = -1,
+        .depo = agent_depo,
+    };
     dp[0][agent_depo].push_back(std::move(initial));
 
 
-    std::vector<Candidate<bitset_size>> candidates;
+    std::vector<Candidate> candidates;
     candidates.reserve(TOP_SOLUTIONS_COUNT);
 
     for (points_type cur_load = 0; cur_load <= max_load; ++cur_load) {
@@ -178,7 +219,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
                         // 3. вершина to_vertex еще не была в пути
                         // 4. вершина to_vertex еше не была посещена в пути другого агента
                         if (prev_solution.value != FirstStepAnswer::default_value &&
-                            !prev_solution.IsVertexInPath(to_vertex) &&
+                            !prev_solution.IsVertexInPath(dp, to_vertex) &&
                             (to_vertex == agent_depo || input.visited_points.find(to_vertex) == input.visited_points.end())
                         ) [[likely]] {
 
@@ -198,20 +239,17 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
                                 new_point_dist <= max_dist && 
                                 IsCandidateGood(candidates, new_point_score)
                             ) {
-                                auto new_visited = prev_solution.visited;
-                                if (to_vertex != agent_depo) {
-                                    new_visited.set(to_vertex);
-                                }
                                 InsertTopCandidate(
+                                    dp,
                                     candidates,
-                                    Candidate<bitset_size> {
-                                        .visited = std::move(new_visited),
+                                    Candidate {
                                         .value = new_point_score,
                                         .time = new_point_time,
                                         .distance = new_point_dist,
                                         .load = cur_load,
                                         .candidate_idx = candidate_idx,
-                                        .last_vertex = last_vertex
+                                        .last_vertex = last_vertex,
+                                        .depo = agent_depo,
                                     }
                                 );
                             }
@@ -233,13 +271,13 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
     }
 
     // собираем все лучшие решения из всех допустимых состояний
-    std::vector<Candidate<bitset_size>> answer_candidates;
+    std::vector<Candidate> answer_candidates;
     answer_candidates.reserve(TOP_SOLUTIONS_COUNT);
 
     for (points_type cur_load = min_load + 1; cur_load <= max_load + 1; ++cur_load) {
         for (auto& candidate : dp[cur_load][agent_depo]) {
             if (IsCandidateGood(answer_candidates, candidate.value)) {
-                InsertTopCandidate(answer_candidates, std::move(candidate));
+                InsertTopCandidate(dp, answer_candidates, std::move(candidate));
             }
         }
     }
@@ -249,7 +287,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
 
     // восстанавливаем лучшие решения из кандидатов
     for (const auto& candidate: answer_candidates) {
-        answer_solutions.emplace_back(candidate.CreateAnswer(dp, agent_depo));
+        answer_solutions.emplace_back(candidate.CreateAnswer(dp));
     }
     return answer_solutions;
 }
@@ -267,13 +305,5 @@ std::ostream &operator<<(std::ostream &os, const FirstStepAnswer &answer) {
     return os;
 }
 
-template std::vector<FirstStepAnswer> DoFirstStep<128, true>(const TInputData &input, const size_t agent);
-template std::vector<FirstStepAnswer> DoFirstStep<256, true>(const TInputData &input, const size_t agent);
-template std::vector<FirstStepAnswer> DoFirstStep<512, true>(const TInputData &input, const size_t agent);
-template std::vector<FirstStepAnswer> DoFirstStep<std::numeric_limits<TInputData::points_type>::max(), true>(const TInputData &input, const size_t agent);
-
-
-template std::vector<FirstStepAnswer> DoFirstStep<128, false>(const TInputData &input, const size_t agent);
-template std::vector<FirstStepAnswer> DoFirstStep<256, false>(const TInputData &input, const size_t agent);
-template std::vector<FirstStepAnswer> DoFirstStep<512, false>(const TInputData &input, const size_t agent);
-template std::vector<FirstStepAnswer> DoFirstStep<std::numeric_limits<TInputData::points_type>::max(), false>(const TInputData &input, const size_t agent);
+template std::vector<FirstStepAnswer> DoFirstStep<true>(const TInputData &input, const size_t agent);
+template std::vector<FirstStepAnswer> DoFirstStep<false>(const TInputData &input, const size_t agent);

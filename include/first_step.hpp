@@ -36,7 +36,7 @@ struct FirstStepAnswer {
     }
 };
 
-template<size_t bitset_size = std::numeric_limits<TInputData::points_type>::max(), bool is_time_dependent = false>
+template<bool is_time_dependent = false>
 std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t agent);
 
 std::ostream &operator<<(std::ostream &os, const FirstStepAnswer &answer);
