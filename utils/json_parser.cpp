@@ -51,16 +51,6 @@ namespace nlohmann {
         j.at("total_distance").get_to(s.total_distance);
         j.at("total_value").get_to(s.total_value);
     }
-
-    // inline void to_json(json &j, const Solution &s) {
-    //     j = json{
-    //             {"route",          s.tour},
-    //             {"solution_size",  s.tour.size()},
-    //             {"total_time",     s.time},
-    //             {"total_distance", s.distance},
-    //             {"total_value",    s.score}
-    //     };
-    // }
 }
 
 namespace JsonParser {
@@ -107,17 +97,4 @@ namespace JsonParser {
         file << j.dump(4);
         return true;
     };
-
-    // bool WriteSolutionTojsonFile(const std::string& jsonPath, Solution && solution) {
-    //     nlohmann::json j = std::move(solution);
-
-    //     std::ofstream file(jsonPath);
-    //     if (!file) {
-    //         std::cerr << "Can`t open output file to write solution" << std::endl;
-    //         return false;
-    //     }
-
-    //     file << j.dump(4);
-    //     return true;
-    // };
 }

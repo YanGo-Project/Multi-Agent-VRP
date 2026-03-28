@@ -11,8 +11,8 @@
 #include <iostream>
 
 namespace {
-
 std::mutex unvisited_mutex;
+}
 
 bool DoInnerOptimization(TPath& path, const TInputData& inputData, const OptimizationContext& context) {
     size_t no_improve   = 0;
@@ -66,8 +66,6 @@ bool DoInterOptimization(TPath& path1, TPath& path2, const TInputData& inputData
     // std::cout << "InterOperation: " << (uint32_t)dst << std::endl;
     return inter_ops.DoOperation(path1, path2, inputData, op);
 }
-
-} // namespace
 
 void Optimize(std::vector<TPath>& paths, const TInputData& inputData, const OptimizationContext& context) {
 

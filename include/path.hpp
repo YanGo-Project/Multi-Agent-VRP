@@ -43,6 +43,10 @@ struct TPath {
         return true;
     }
 
+    bool operator<(const TPath& other) const {
+        return score < other.score;
+    }
+
     std::string get_data_to_csv() const {
         return std::to_string(score) + "," + std::to_string(time) + "," + std::to_string(distance);
     }
