@@ -52,23 +52,11 @@ namespace {
 
             auto pathSet = GetPathSet(dp);
 
-            return pathSet.find(vertex) == pathSet.end();
+            return pathSet.find(vertex) != pathSet.end();
         }
 
         inline bool IsSamePathSet(const std::vector<std::vector<std::vector<Candidate>>>& dp, const Candidate& other) const {
-            auto pathSet1 = GetPathSet(dp);
-            auto pathSet2 = other.GetPathSet(dp);
-
-            if (pathSet1.size() != pathSet2.size()) {
-                return false;
-            }
-
-            for (auto vertex: pathSet1) {
-                if (pathSet2.find(vertex) == pathSet2.end()) {
-                    return false;
-                }
-            }
-            return true;
+            return GetPathSet(dp) == other.GetPathSet(dp);
         }
 
         FirstStepAnswer CreateAnswer(const std::vector<std::vector<std::vector<Candidate>>>& dp) const {
@@ -220,7 +208,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
                         // 4. вершина to_vertex еше не была посещена в пути другого агента
                         if (prev_solution.value != FirstStepAnswer::default_value &&
                             !prev_solution.IsVertexInPath(dp, to_vertex) &&
-                            (to_vertex == agent_depo || input.visited_points.find(to_vertex) == input.visited_points.end())
+                            input.visited_points.find(to_vertex) == input.visited_points.end()
                         ) [[likely]] {
 
                             FirstStepAnswer::score_type travel_time;
