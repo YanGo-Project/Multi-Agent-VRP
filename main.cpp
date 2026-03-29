@@ -130,11 +130,8 @@ int main(int argc, char *argv[]) {
         .unvisited_candidates             = 10,
     };
 
-    std::cout << "Agents: " << input.agents_count << "\n";
-
     auto paths = FisrtStep(input, args, opt_ctx);
     ConstructUnvisitedVertexes(input);
-
 
     auto print_paths = [&](const char* header) {
         std::cout << "\n=== " << header << " ===\n";
@@ -147,8 +144,11 @@ int main(int argc, char *argv[]) {
     };
 
     print_paths("First step results");
+    JsonParser::WriteAgentsJson(paths, JsonParser::MakeJsonPath(args.problemJsonPath, "before"));
+
     Optimize(paths, input, opt_ctx);
     print_paths("After local search");
+    JsonParser::WriteAgentsJson(paths, JsonParser::MakeJsonPath(args.problemJsonPath, "after"));
 
     return 0;
 }
