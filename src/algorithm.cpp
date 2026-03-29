@@ -30,7 +30,7 @@ bool DoInnerOptimization(TPath& path, const TInputData& inputData, const Optimiz
         TInnerOperations::TInnerOperationContext inner_operation_context{
             .orOptSize = or_opt_size, 
             .unvisiedCandidatesCount = unvisited_candidates,
-            .take_first_improve = context.take_first_improve,
+            .takeFirstImprove = context.take_first_improve,
         };
         TInnerOperations::EInnerOperation inner_operation = static_cast<TInnerOperations::EInnerOperation>(op_dist(rng));
 
