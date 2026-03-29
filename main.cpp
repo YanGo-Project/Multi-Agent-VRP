@@ -63,7 +63,7 @@ TPath ChooseBestCandidatePath(std::vector<FirstStepAnswer>&& candidates, TInputD
     threads.reserve(paths.size());
     for (size_t i = 0; i < paths.size(); ++i) {
         threads.emplace_back([&paths, &input, &ctx, i] {
-           DoInnerOptimization(paths[i], input, ctx);
+        //    DoInnerOptimization(paths[i], input, ctx); 
         });
     }
 

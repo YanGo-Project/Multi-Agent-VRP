@@ -223,7 +223,7 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
                             return path1.tour[pos];
                         } else {
                             return path2.tour[split2 + (pos - split1)];
-                        };
+                        }
                     });
 
             auto [distance2, time2, score2] = inputData.EvalVirtualTour(path2, new_size2,
