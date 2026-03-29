@@ -1,5 +1,4 @@
-#include "problem_arguments.hpp"
-#include "../include/path.hpp"
+#include "problem_arguments_impl.hpp"
 #include <unistd.h>
 #include <ostream>
 
@@ -104,35 +103,8 @@ int64_t TInputData::get_time_dependent_cost(int64_t time,
 
 std::tuple<int64_t, int64_t, int64_t>
 TInputData::get_path_distance_time_score(const TPath& path) const {
-
-    if (path.tour.empty()) {
-        return {0, 0, 0};
-    }
-
-    int64_t distance = 0;
-    int64_t time = 0;
-    int64_t score = 0;
-
-    const auto depo = path.depo;
-
-    points_type from = depo, to = 0;
-    for (size_t i = 0; i < path.tour.size() + 1; ++i) {
-        
-        if (i == path.tour.size()) [[unlikely]] {
-            to = depo;
-        } else {
-            to = path.tour[i];
-        }
-
-        distance += distance_matrix[from][to];
-        auto travel_time = get_time_dependent_cost(time + agent_start_time[path.agent_idx], from, to);
-        time += point_service_times[to] + travel_time;
-        score += point_scores[to] - travel_time;
-
-        from = to;
-    }
-
-    return std::make_tuple(distance, time, score);
+    return EvalVirtualTour(path, path.tour.size(),
+        [&](size_t i) -> points_type { return path.tour[i]; });
 }
 
 std::ostream &operator<<(std::ostream &os, const TInputData &data) {

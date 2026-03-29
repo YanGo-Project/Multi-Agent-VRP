@@ -10,6 +10,7 @@ struct OptimizationContext {
     size_t inter_iterations_without_improve = 200;
     size_t max_or_opt_size = 10;
     size_t unvisited_candidates = 10;
+    bool take_first_improve = false;
 };
 
 bool DoInnerOptimization(TPath& path, const TInputData& inputData, const OptimizationContext& context);
