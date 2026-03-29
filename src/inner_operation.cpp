@@ -1,4 +1,5 @@
 #include "../include/inner_operation.hpp"
+#include "../utils/problem_arguments_impl.hpp"
 
 #include <algorithm>
 #include <iomanip>
@@ -19,7 +20,8 @@ namespace {
         std::vector<points_type> chosen(input.unvisited_points.begin(), input.unvisited_points.begin() + vertexes);
         return chosen;
     }
-}
+
+} // namespace
 
 std::ostream& operator<<(std::ostream& os, const TPath& path) {
     os << "score=" << path.score
@@ -56,51 +58,39 @@ bool TInnerOperations::DoOperation(TPath& path, const TInputData& inputData,
 
 // меняем местами соседние вершины
 bool TInnerOperations::SwapAdjacent(TPath& path, const TInputData& inputData, TInnerOperationContext&) {
-
     auto initial_score = path.score;
 
-    struct best_operation {
-        size_t i;
-        int64_t distance;
-        int64_t time;
-        int64_t score;
-    };
-
+    struct best_operation { size_t i; int64_t distance, time, score; };
     bool found = false;
-    best_operation best_swap_adjacent{};
+    best_operation best{};
 
     for (size_t i = 0; i + 1 < path.tour.size(); ++i) {
-        path.tour[i] = std::exchange(path.tour[i + 1], path.tour[i]);
-        auto [distance, time, score] = inputData.get_path_distance_time_score(path);
+        // виртуально меняем местами вершины tour[i] и toru[i+1]
+        auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size(),
+            [&](size_t pos) -> points_type {
+                if (pos == i) return path.tour[i + 1];
+                if (pos == i + 1) return path.tour[i];
+                return path.tour[pos];
+            });
 
         if (initial_score < score && distance <= path.max_distance && time <= path.max_time) {
             found = true;
-            best_swap_adjacent = {
-                .i = i,
-                .distance = distance,
-                .time = time,
-                .score = score,
-            };
+            best = {.i = i, .distance = distance, .time = time, .score = score};
             initial_score = score;
         }
-
-        // возврат пути в прежнее состояние
-        path.tour[i] = std::exchange(path.tour[i + 1], path.tour[i]);
     }
 
     if (found) {
-        path.tour[best_swap_adjacent.i] = std::exchange(path.tour[best_swap_adjacent.i + 1], path.tour[best_swap_adjacent.i]);
-        path.distance = best_swap_adjacent.distance;
-        path.time = best_swap_adjacent.time;
-        path.score = best_swap_adjacent.score;
+        std::swap(path.tour[best.i], path.tour[best.i + 1]);
+        path.distance = best.distance;
+        path.time = best.time;
+        path.score = best.score;
     }
-
     return found;
 }
 
-// меняем местами любые две вершины
+// меняет местами две любые вершины
 bool TInnerOperations::SwapAny(TPath& path, const TInputData& inputData, TInnerOperationContext&) {
-
     auto initial_score = path.score;
 
     struct best_operation {
@@ -112,41 +102,36 @@ bool TInnerOperations::SwapAny(TPath& path, const TInputData& inputData, TInnerO
     };
 
     bool found = false;
-    best_operation best_swap_any{};
+    best_operation best{};
 
     for (size_t i = 0; i < path.tour.size(); ++i) {
         for (size_t j = i + 1; j < path.tour.size(); ++j) {
-            path.tour[i] = std::exchange(path.tour[j], path.tour[i]);
-            auto [distance, time, score] = inputData.get_path_distance_time_score(path);
+            // делаем виртуальную замену вершин tour[i] и tour[j] 
+            auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size(),
+                [&](size_t pos) -> points_type {
+                    if (pos == i) return path.tour[j];
+                    if (pos == j) return path.tour[i];
+                    return path.tour[pos];
+                });
 
             if (initial_score < score && distance <= path.max_distance && time <= path.max_time) {
                 found = true;
-                best_swap_any = {
-                    .i = i,
-                    .j = j,
-                    .distance = distance,
-                    .time = time,
-                    .score = score,
-                };
+                best = {.i = i, .j = j, .distance = distance, .time = time, .score = score};
                 initial_score = score;
             }
-
-            // возврат пути в прежнее состояние
-            path.tour[i] = std::exchange(path.tour[j], path.tour[i]);
         }
     }
 
     if (found) {
-        path.tour[best_swap_any.i] = std::exchange(path.tour[best_swap_any.j], path.tour[best_swap_any.i]);
-        path.distance = best_swap_any.distance;
-        path.time = best_swap_any.time;
-        path.score = best_swap_any.score;
+        std::swap(path.tour[best.i], path.tour[best.j]);
+        path.distance = best.distance;
+        path.time = best.time;
+        path.score = best.score;
     }
-
     return found;
 }
 
-// перемещает одну вершину на лучшую позицию. O(n^2)
+// делает циклический свдиг подотрезка
 bool TInnerOperations::Shift(TPath& path, const TInputData& inputData, TInnerOperationContext&) {
 
     auto initial_score = path.score;
@@ -162,20 +147,21 @@ bool TInnerOperations::Shift(TPath& path, const TInputData& inputData, TInnerOpe
     bool found = false;
     best_operation best{};
 
+    auto get_shifted = [&](size_t from, size_t to, size_t pos) -> points_type {
+        if (pos == to) return path.tour[from];
+        // позиция до вставки в to
+        size_t original_pos = pos < to ? pos : pos - 1;
+        // позиция до удаления from
+        original_pos = original_pos < from ? original_pos : original_pos + 1;
+        return path.tour[original_pos];
+    };
+
     for (size_t from = 0; from < path.tour.size(); ++from) {
-
-        auto erased = path.tour;
-        const auto vertex = erased[from];
-        erased.erase(erased.begin() + from);
-
         for (size_t to = 0; to < path.tour.size(); ++to) {
             if (from == to) continue;
 
-            erased.insert(erased.begin() + to, vertex);
-            std::swap(path.tour, erased);
-            auto [distance, time, score] = inputData.get_path_distance_time_score(path);
-            std::swap(path.tour, erased);
-            erased.erase(erased.begin() + to);
+            auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size(),
+                [&](size_t pos) { return get_shifted(from, to, pos); });
 
             if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
                 found = true;
@@ -190,13 +176,13 @@ bool TInnerOperations::Shift(TPath& path, const TInputData& inputData, TInnerOpe
         path.tour.erase(path.tour.begin() + best.from);
         path.tour.insert(path.tour.begin() + best.to, vertex);
         path.distance = best.distance;
-        path.time     = best.time;
-        path.score    = best.score;
+        path.time = best.time;
+        path.score = best.score;
     }
-
     return found;
 }
 
+// разворачивает сегмент [i..j]
 bool TInnerOperations::TwoOpt(TPath& path, const TInputData& inputData, TInnerOperationContext&) {
     auto initial_score = path.score;
 
@@ -209,46 +195,40 @@ bool TInnerOperations::TwoOpt(TPath& path, const TInputData& inputData, TInnerOp
     };
 
     bool found = false;
-    best_operation best_two_opt{};
+    best_operation best{};
 
     for (size_t i = 0; i + 1 < path.tour.size(); ++i) {
         for (size_t j = i + 1; j + 1 < path.tour.size(); ++j) {
-            std::reverse(path.tour.begin() + i, path.tour.begin() + j + 1);
-            auto [distance, time, score] = inputData.get_path_distance_time_score(path);
+            // виртуально разворачиваем tour[i..j] 
+            auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size(),
+                [&](size_t pos) -> points_type {
+                    if (i <= pos && pos <= j) return path.tour[i + j - pos];
+                    return path.tour[pos];
+                });
 
             if (initial_score < score && distance <= path.max_distance && time <= path.max_time) {
                 found = true;
-                best_two_opt = {
-                    .i = i,
-                    .j = j,
-                    .distance = distance,
-                    .time = time,
-                    .score = score,
-                };
+                best = {.i = i, .j = j, .distance = distance, .time = time, .score = score};
                 initial_score = score;
             }
-
-            // возврат пути в прежнее состояние
-            std::reverse(path.tour.begin() + i, path.tour.begin() + j + 1);
         }
     }
 
     if (found) {
-        std::reverse(path.tour.begin() + best_two_opt.i, path.tour.begin() + best_two_opt.j + 1);
-        path.distance = best_two_opt.distance;
-        path.time = best_two_opt.time;
-        path.score = best_two_opt.score;
+        std::reverse(path.tour.begin() + best.i, path.tour.begin() + best.j + 1);
+        path.distance = best.distance;
+        path.time = best.time;
+        path.score = best.score;
     }
-
     return found;
 }
 
-// перемещает сегмент из context.orOptSize вершин на лучшую позицию. O(n^2)
+// перемещает сегмент длины seg_len на новую позицию
 bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
-    const size_t n        = path.tour.size();
-    const size_t opt_size = std::min(static_cast<size_t>(context.orOptSize), n);
 
-    if (opt_size == 0 || n < opt_size + 1) {
+    const size_t seg_len  = std::min(static_cast<size_t>(context.orOptSize), path.tour.size());
+
+    if (seg_len == 0 || path.tour.size() < seg_len + 1) {
         return false;
     }
 
@@ -265,20 +245,20 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
     bool found = false;
     best_operation best{};
 
-    for (size_t from = 0; from + opt_size <= n; ++from) {
-        TRoute erased = path.tour;
-        std::vector<TRoute::value_type> segment(erased.begin() + from,
-                                                erased.begin() + from + opt_size);
-        erased.erase(erased.begin() + from, erased.begin() + from + opt_size);
-
-        for (size_t to = 0; to + opt_size <= n; ++to) {
+    for (size_t from = 0; from + seg_len <= path.tour.size(); ++from) {
+        for (size_t to = 0; to + seg_len <= path.tour.size(); ++to) {
             if (to == from) continue;
 
-            erased.insert(erased.begin() + to, segment.begin(), segment.end());
-            std::swap(path.tour, erased);
-            auto [distance, time, score] = inputData.get_path_distance_time_score(path);
-            std::swap(path.tour, erased);
-            erased.erase(erased.begin() + to, erased.begin() + to + opt_size);
+            auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size(),
+                [&](size_t pos) -> points_type {
+                    // если позиция из вставленного подотрезка 
+                    if (to <= pos && pos < to + seg_len) {
+                        return path.tour[from + (pos - to)];
+                    }
+                    size_t original_pos = pos < to ? pos : pos - seg_len;
+                    original_pos = (original_pos < from) ? original_pos : original_pos + seg_len;
+                    return path.tour[original_pos];
+                });
 
             if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
                 found = true;
@@ -289,49 +269,42 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
     }
 
     if (found) {
-        std::vector<TRoute::value_type> segment(path.tour.begin() + best.from, path.tour.begin() + best.from + opt_size);
-        path.tour.erase(path.tour.begin() + best.from, path.tour.begin() + best.from + opt_size);
+        std::vector<TRoute::value_type> segment(path.tour.begin() + best.from, path.tour.begin() + best.from + seg_len);
+        path.tour.erase(path.tour.begin() + best.from, path.tour.begin() + best.from + seg_len);
         path.tour.insert(path.tour.begin() + best.to, segment.begin(), segment.end());
         path.distance = best.distance;
-        path.time     = best.time;
-        path.score    = best.score;
+        path.time = best.time;
+        path.score = best.score;
     }
-
     return found;
 }
 
-// пытается добавить в путь ещё непосещённую никем вершину
+// пытается добавить еще непосещенную вершину в путь
 bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
+    if (path.tour.size() == path.max_vertexes) return false;
 
-    if (path.tour.size() == path.max_vertexes) {
-        return false;
-    }
-
+    const size_t n = path.tour.size();
     auto initial_score = path.score;
 
-    auto candidates = ChooseUnvisitedVertexes(inputData, std::max(context.unvisiedCandidatesCount, 1ul));
+    auto candidates_list = ChooseUnvisitedVertexes(inputData, std::max(context.unvisiedCandidatesCount, 1ul));
 
-    struct best_operation {
-        TRoute::value_type vertex;
-        size_t to;
-        int64_t distance;
-        int64_t time;
-        int64_t score;
-    };
-
+    struct best_operation { TRoute::value_type vertex; size_t to; int64_t distance, time, score; };
     bool found = false;
     best_operation best{};
 
-    for (auto candidate : candidates) {
-        for (size_t to = 0; to < path.tour.size(); ++to) {
-            path.tour.insert(path.tour.begin() + to, candidate);
-            auto [distance, time, score] = inputData.get_path_distance_time_score(path);
+    for (auto candidate : candidates_list) {
+        for (size_t to = 0; to <= path.tour.size(); ++to) {
+            auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size() + 1,
+                [&](size_t pos) -> points_type {
+                    if (pos == to) return candidate;
+                    return path.tour[pos < to ? pos : pos - 1];
+                });
+
             if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
                 found = true;
-                best = {.vertex = candidate, .to = to, .distance = distance, .time = time, .score = score};
+                best = {candidate, to, distance, time, score};
                 initial_score = score;
             }
-            path.tour.erase(path.tour.begin() + to);
         }
     }
 
@@ -342,14 +315,12 @@ bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, T
         path.score    = best.score;
 
         inputData.visited_points.insert(best.vertex);
-        auto it = std::find_if(inputData.unvisited_points.begin(), inputData.unvisited_points.end(),
-            [&](const auto m) { return m == best.vertex; });
-        if (it == inputData.unvisited_points.end()) { [[unlikely]]
-            std::cout << "Error -- want delete already visited point: " <<best.vertex << " for agent #" << path.agent_idx << "\n"; 
-        } else {
+        auto it = std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), best.vertex);
+        if (it != inputData.unvisited_points.end()) [[likely]] {
             inputData.unvisited_points.erase(it);
+        } else {
+            std::cout << "Error: want delete already visited point: " << best.vertex << " for agent #" << path.agent_idx << "\n";
         }
     }
-
     return found;
 }

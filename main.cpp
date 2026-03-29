@@ -23,7 +23,7 @@ std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& f
             TPath{
                 .distance     = 0,
                 .time         = 0,
-                .score        = std::numeric_limits<TPath::score_type>::min() + 1,
+                .score        = 0,
                 .max_distance = input.max_distance[agent],
                 .max_time     = input.max_time[agent],
                 .max_vertexes = input.max_load[agent],
@@ -128,6 +128,7 @@ int main(int argc, char *argv[]) {
         .inter_iterations_without_improve = static_cast<size_t>(args.meta.max_iter_without_solution),
         .max_or_opt_size                  = 10,
         .unvisited_candidates             = 10,
+        .take_first_improve               = true,
     };
 
     auto paths = FisrtStep(input, args, opt_ctx);
