@@ -27,7 +27,11 @@ bool DoInnerOptimization(TPath& path, const TInputData& inputData, const Optimiz
     while (no_improve < context.inner_iterations_without_improve) {
 
         const size_t or_opt_size = std::min(no_improve + 2, context.max_or_opt_size);
-        TInnerOperations::TInnerOperationContext inner_operation_context{.orOptSize = or_opt_size, .unvisiedCandidatesCount = unvisited_candidates};
+        TInnerOperations::TInnerOperationContext inner_operation_context{
+            .orOptSize = or_opt_size, 
+            .unvisiedCandidatesCount = unvisited_candidates,
+            .take_first_improve = context.take_first_improve,
+        };
         TInnerOperations::EInnerOperation inner_operation = static_cast<TInnerOperations::EInnerOperation>(op_dist(rng));
 
         bool improved = false;

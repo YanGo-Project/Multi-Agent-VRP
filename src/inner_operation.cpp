@@ -9,7 +9,6 @@
 #include <random>
 
 namespace {
-
     using points_type = TRoute::value_type;
 
     std::vector<points_type> ChooseUnvisitedVertexes(const TInputData& input, size_t vertexes) {
@@ -281,9 +280,10 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
 
 // пытается добавить еще непосещенную вершину в путь
 bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
-    if (path.tour.size() == path.max_vertexes) return false;
+    if (path.tour.size() == path.max_vertexes) {
+        return false;
+    }
 
-    const size_t n = path.tour.size();
     auto initial_score = path.score;
 
     auto candidates_list = ChooseUnvisitedVertexes(inputData, std::max(context.unvisiedCandidatesCount, 1ul));
@@ -302,7 +302,7 @@ bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, T
 
             if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
                 found = true;
-                best = {candidate, to, distance, time, score};
+                best = {.vertex = candidate, .to = to, .distance = distance, .time = time, .score = score};
                 initial_score = score;
             }
         }
@@ -311,11 +311,11 @@ bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, T
     if (found) {
         path.tour.insert(path.tour.begin() + best.to, best.vertex);
         path.distance = best.distance;
-        path.time     = best.time;
-        path.score    = best.score;
+        path.time = best.time;
+        path.score = best.score;
 
         inputData.visited_points.insert(best.vertex);
-        auto it = std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), best.vertex);
+        const auto& it = std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), best.vertex);
         if (it != inputData.unvisited_points.end()) [[likely]] {
             inputData.unvisited_points.erase(it);
         } else {

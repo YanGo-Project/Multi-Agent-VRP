@@ -23,6 +23,7 @@ public:
     struct TInnerOperationContext {
         size_t orOptSize;
         size_t unvisiedCandidatesCount;
+        bool takeFirstImprove = false;
     };
 
     bool DoOperation(TPath& path, const TInputData& inputData, TInnerOperationContext& context, EInnerOperation operation);
