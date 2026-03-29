@@ -23,11 +23,10 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
         return false;
     }
 
-    RejectStats stats{};
     return (this->*kOperations[idx])(path1, path2, inputData, stats);
 }
 
-bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData, RejectStats& stats) {
+bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData) {
     auto initial_score = path1.score + path2.score;
 
     struct best_operation {
@@ -110,7 +109,7 @@ bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &in
     return found;
 }
 
-bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputData, RejectStats& stats) {
+bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputData) {
     auto initial_score = path1.score + path2.score;
 
     struct best_operation {
@@ -176,7 +175,7 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
     return found;
 }
 
-bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData, RejectStats& stats) {
+bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData) {
     auto initial_score = path1.score + path2.score;
 
     struct best_operation {
@@ -264,7 +263,7 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
     return found;
 }
 
-bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &inputData, RejectStats& stats) {
+bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &inputData) {
     auto initial_score = path1.score + path2.score;
 
     // длина отрезка ограничена четвертью минимального из двух маршрутов

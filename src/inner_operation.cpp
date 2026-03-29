@@ -225,7 +225,7 @@ bool TInnerOperations::TwoOpt(TPath& path, const TInputData& inputData, TInnerOp
 // перемещает сегмент длины seg_len на новую позицию
 bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
 
-    const size_t seg_len  = std::min(static_cast<size_t>(context.orOptSize), path.tour.size());
+    const size_t seg_len = std::min(static_cast<size_t>(context.orOptSize), path.tour.size());
 
     if (seg_len == 0 || path.tour.size() < seg_len + 1) {
         return false;

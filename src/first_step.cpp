@@ -123,7 +123,7 @@ namespace {
         std::sort(candidates.begin(), candidates.end(), 
             [](const auto& first, const auto& second) {
                 return first.value > second.value;
-            }    
+            }
         );
 
         if (candidates.size() == TOP_SOLUTIONS_COUNT + 1) [[likely]] {
@@ -196,7 +196,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
                 }
 
                 // делаем проверку:
-                // 1. вершины не совпали   
+                // 1. вершины не совпали
                 // 2. есть такой путь с cur_load вершинами, который заканчивается в last_vertex
                 if (last_vertex != to_vertex && !dp[cur_load][last_vertex].empty()) [[likely]] {
 

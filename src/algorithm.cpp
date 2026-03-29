@@ -15,7 +15,7 @@ std::mutex unvisited_mutex;
 }
 
 bool DoInnerOptimization(TPath& path, const TInputData& inputData, const OptimizationContext& context) {
-    size_t no_improve   = 0;
+    size_t no_improve = 0;
     bool any_improved = false;
     
     std::mt19937 rng{std::random_device{}()};
@@ -49,7 +49,7 @@ bool DoInnerOptimization(TPath& path, const TInputData& inputData, const Optimiz
         }
 
         if (improved) {
-            no_improve   = 0;
+            no_improve = 0;
             any_improved = true;
         } else {
             ++no_improve;

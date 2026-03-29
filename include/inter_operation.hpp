@@ -16,21 +16,14 @@ public:
 
     static constexpr int kInterOperationsCount = 4;
 
-    struct RejectStats {
-        int vertex_limit = 0;
-        int time_exceed  = 0;
-        int dist_exceed  = 0;
-        int no_gain      = 0;
-    };
-
     bool DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
                      EInterOperation operation);
 
 private:
-    using TOperationFn = bool (TInterOperations::*)(TPath&, TPath&, const TInputData&, RejectStats&);
+    using TOperationFn = bool (TInterOperations::*)(TPath&, TPath&, const TInputData&);
 
-    bool Relocate(TPath& path1, TPath& path2, const TInputData& inputData, RejectStats& stats);
-    bool Swap    (TPath& path1, TPath& path2, const TInputData& inputData, RejectStats& stats);
-    bool TwoOpt  (TPath& path1, TPath& path2, const TInputData& inputData, RejectStats& stats);
-    bool Cross   (TPath& path1, TPath& path2, const TInputData& inputData, RejectStats& stats);
+    bool Relocate(TPath& path1, TPath& path2, const TInputData& inputData);
+    bool Swap(TPath& path1, TPath& path2, const TInputData& inputData);
+    bool TwoOpt(TPath& path1, TPath& path2, const TInputData& inputData);
+    bool Cross(TPath& path1, TPath& path2, const TInputData& inputData);
 };
