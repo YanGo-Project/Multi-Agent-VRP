@@ -12,7 +12,7 @@ namespace {
     using points_type = TRoute::value_type;
 
     std::vector<points_type> ChooseUnvisitedVertexes(const TInputData& input, size_t vertexes) {
-        static std::mt19937 rng{std::random_device{}()};
+        thread_local std::mt19937 rng{std::random_device{}()};
         vertexes = std::min(vertexes, input.unvisited_points.size());
 
         std::shuffle(input.unvisited_points.begin(), input.unvisited_points.end(), rng);

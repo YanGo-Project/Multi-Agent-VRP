@@ -54,10 +54,10 @@ struct TInputData {
     /// склад/стартовая точка исполнителя в матрице имеет индекс 0.
     std::vector<std::vector<std::vector<int64_t>>> time_matrix;
     /// массив "важностей" всех точек, кроме склада.
-    /// Размерность массива @points_count - 1.
+    /// Размерность массива @points_count
     std::vector<int64_t> point_scores;
     /// массив времён на обслуживание каждой точки, кроме склада.
-    /// Размерность массива @points_count - 1.
+    /// Размерность массива @points_count
     std::vector<int64_t> point_service_times;
     /// массив который указывает какая вершина является депо у агентов
     std::vector<points_type> agent_depots;

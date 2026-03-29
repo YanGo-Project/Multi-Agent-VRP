@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include "json_parser.hpp"
+#include "../include/path.hpp"
 
 namespace nlohmann {
     inline void from_json(const json &j, TInputData &t) {
@@ -97,4 +98,46 @@ namespace JsonParser {
         file << j.dump(4);
         return true;
     };
+
+    std::string MakeJsonPath(const std::string& base, const std::string& suffix) {
+        if (base.empty()) {
+            return suffix + ".json";
+        }
+        const auto dot  = base.rfind('.');
+        const auto stem = (dot == std::string::npos) ? base : base.substr(0, dot);
+        return stem + "_" + suffix + ".json";
+    }
+
+    bool WriteAgentsJson(const std::vector<TPath>& paths, const std::string& filepath) {
+        json agents = json::array();
+
+        for (size_t i = 0; i < paths.size(); ++i) {
+            const auto& p = paths[i];
+
+            std::vector<int> vertexes;
+            vertexes.reserve(p.tour.size() + 2);
+            vertexes.push_back(static_cast<int>(p.depo));
+            for (auto v : p.tour) {
+                vertexes.push_back(static_cast<int>(v));
+            }
+            vertexes.push_back(static_cast<int>(p.depo));
+
+            agents.push_back(json{
+                {"index",    static_cast<int>(i)},
+                {"vertexes", std::move(vertexes)},
+            });
+        }
+
+        json j;
+        j["agents"] = std::move(agents);
+
+        std::ofstream file(filepath);
+        if (!file) {
+            std::cerr << "Can`t open file for writing: " << filepath << "\n";
+            return false;
+        }
+        file << j.dump(4);
+        std::cout << "Written: " << filepath << "\n";
+        return true;
+    }
 }

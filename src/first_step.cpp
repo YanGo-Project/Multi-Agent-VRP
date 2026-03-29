@@ -219,7 +219,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
                             }
 
                             auto new_point_score = prev_solution.value + input.point_scores[to_vertex] - travel_time;
-                            auto new_point_time = prev_solution.time + input.point_service_times[to_vertex - 1] + travel_time;
+                            auto new_point_time = prev_solution.time + input.point_service_times[to_vertex] + travel_time;
                             auto new_point_dist = prev_solution.distance + input.distance_matrix[last_vertex][to_vertex];
 
                             // проверки найденного пути на целевую функцию, максимальное время пути и максимальную дистанцию

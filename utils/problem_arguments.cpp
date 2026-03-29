@@ -126,8 +126,8 @@ TInputData::get_path_distance_time_score(const TPath& path) const {
 
         distance += distance_matrix[from][to];
         auto travel_time = get_time_dependent_cost(time + agent_start_time[path.agent_idx], from, to);
-        time += (to == depo ? 0 : point_service_times[to - 1]) + travel_time;
-        score += (to == depo ? 0 : point_scores[to - 1]) - travel_time;
+        time += point_service_times[to] + travel_time;
+        score += point_scores[to] - travel_time;
 
         from = to;
     }
