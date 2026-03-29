@@ -88,16 +88,7 @@ std::vector<TPath> FisrtStep(TInputData& input, const ProgramArguments& args, co
 
     for (uint32_t i = 0; i < input.agents_count; ++i) {
 
-        std::vector<FirstStepAnswer> result;
-        if (input.points_count < 128) {
-            result = DoFirstStep<128, true>(input, i);
-        } else if (input.points_count < 256) {
-            result = DoFirstStep<256, true>(input, i);
-        } else if (input.points_count < 512) {
-            result = DoFirstStep<512, true>(input, i);
-        } else {
-            result = DoFirstStep<std::numeric_limits<TInputData::points_type>::max(), true>(input, i);
-        }
+        auto result = DoFirstStep<true>(input, i);
 
         auto bestPath = ChooseBestCandidatePath(std::move(result), input, ctx, i);
 
