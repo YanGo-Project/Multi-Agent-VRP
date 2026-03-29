@@ -1,10 +1,15 @@
 #include "../include/inter_operation.hpp"
+#include "../utils/problem_arguments_impl.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+
+namespace {
+    using points_type = TRoute::value_type;
+} // namespace
 
 bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
                                    EInterOperation operation) {
@@ -23,9 +28,10 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
         return false;
     }
 
-    return (this->*kOperations[idx])(path1, path2, inputData, stats);
+    return (this->*kOperations[idx])(path1, path2, inputData);
 }
 
+// переместить одну вершину пути в другой путь
 bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData) {
     auto initial_score = path1.score + path2.score;
 
@@ -47,19 +53,27 @@ bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &in
     // src -> dst: пробуем переместить вершину из src в dst и ищем лучший вариант
     auto try_relocate_direction = [&](TPath& src, TPath& dst, bool from_first) {
         if (src.tour.size() <= src.min_vertexes || dst.tour.size() >= dst.max_vertexes) {
-            ++stats.vertex_limit;
             return;
         }
 
         for (size_t from = 0; from < src.tour.size(); ++from) {
-            const auto element = src.tour[from];
-            src.tour.erase(src.tour.begin() + from);
-            auto [distance1, time1, score1] = inputData.get_path_distance_time_score(src);
+
+            auto [distance1, time1, score1] = inputData.EvalVirtualTour(src, src.tour.size() - 1,
+                    [&](size_t pos) -> points_type {
+                        if (pos < from) return src.tour[pos];
+                        return src.tour[pos + 1];
+                    });
 
             for (size_t to = 0; to <= dst.tour.size(); ++to) {
-                dst.tour.insert(dst.tour.begin() + to, element);
-
-                auto [distance2, time2, score2] = inputData.get_path_distance_time_score(dst);
+                auto [distance2, time2, score2] = inputData.EvalVirtualTour(dst, dst.tour.size() + 1,
+                        [&](size_t pos) -> points_type {
+                            if (pos == to) return src.tour[from];
+                            if (pos < to) { 
+                                return dst.tour[pos];
+                            } else {
+                                return dst.tour[pos - 1];
+                            }
+                        });
                 
                 if (distance1 <= src.max_distance && distance2 <= dst.max_distance &&
                     time1 <= src.max_time && time2 <= dst.max_time &&
@@ -79,11 +93,7 @@ bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &in
                     };
                     initial_score = score1 + score2;
                 }
-
-                dst.tour.erase(dst.tour.begin() + to);
             }
-
-            src.tour.insert(src.tour.begin() + from, element);
         }
     };
 
@@ -109,6 +119,7 @@ bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &in
     return found;
 }
 
+// обмен двух вершин между путями
 bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputData) {
     auto initial_score = path1.score + path2.score;
 
@@ -129,13 +140,16 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
     for (size_t path1_idx = 0; path1_idx < path1.tour.size(); ++path1_idx) {
         for (size_t path2_idx = 0; path2_idx < path2.tour.size(); ++path2_idx) {
 
-            const auto v1 = path1.tour[path1_idx];
-            const auto v2 = path2.tour[path2_idx];
-
-            std::swap(path1.tour[path1_idx], path2.tour[path2_idx]);
-
-            auto [distance1, time1, score1] = inputData.get_path_distance_time_score(path1);
-            auto [distance2, time2, score2] = inputData.get_path_distance_time_score(path2);
+            auto [distance1, time1, score1] = inputData.EvalVirtualTour(path1, path1.tour.size(),
+                    [&](size_t pos) -> points_type {
+                        if (pos == path1_idx) return path2.tour[path2_idx];
+                        return path1.tour[pos];
+                    });
+            auto [distance2, time2, score2] = inputData.EvalVirtualTour(path2, path2.tour.size(),
+                    [&](size_t pos) -> points_type {
+                        if (pos == path2_idx) return path1.tour[path1_idx];
+                        return path2.tour[pos];
+                    });
 
             if (distance1 <= path1.max_distance && distance2 <= path2.max_distance && 
                 time1 <= path1.max_time && time2 <= path2.max_time && 
@@ -154,9 +168,6 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
                 };
                 initial_score = score1 + score2;
             }
-
-            // возврат путей к исходному состоянию
-            std::swap(path1.tour[path1_idx], path2.tour[path2_idx]);
         }
     }
 
@@ -175,6 +186,7 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
     return found;
 }
 
+// обмениваем "хвосты" у двух маршрутов
 bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData) {
     auto initial_score = path1.score + path2.score;
 
@@ -194,33 +206,34 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
 
     // split1 — позиция разреза в path1: хвост path1[split1..] уходит в path2
     // split2 — позиция разреза в path2: хвост path2[split2..] уходит в path1
-    for (size_t split1 = 0; split1 <= path1.tour.size(); ++split1) {
-        for (size_t split2 = 0; split2 <= path2.tour.size(); ++split2) {
+    for (size_t split1 = 0; split1 < path1.tour.size(); ++split1) {
+        for (size_t split2 = 0; split2 < path2.tour.size(); ++split2) {
 
             const size_t new_size1 = split1 + (path2.tour.size() - split2);
             const size_t new_size2 = split2 + (path1.tour.size() - split1);
 
             if (new_size1 < path1.min_vertexes || new_size1 > path1.max_vertexes ||
                 new_size2 < path2.min_vertexes || new_size2 > path2.max_vertexes) {
-                ++stats.vertex_limit;
                 continue;
             }
 
-            TRoute new_tour1(path1.tour.begin(), path1.tour.begin() + split1);
-            new_tour1.insert(new_tour1.end(), path2.tour.begin() + split2, path2.tour.end());
+            auto [distance1, time1, score1] = inputData.EvalVirtualTour(path1, new_size1,
+                    [&](size_t pos) -> points_type {
+                        if (pos < split1) {
+                            return path1.tour[pos];
+                        } else {
+                            return path2.tour[split2 + (pos - split1)];
+                        }
+                    });
 
-            TRoute new_tour2(path2.tour.begin(), path2.tour.begin() + split2);
-            new_tour2.insert(new_tour2.end(), path1.tour.begin() + split1, path1.tour.end());
-
-            std::swap(path1.tour, new_tour1);
-            std::swap(path2.tour, new_tour2);
-
-            auto [distance1, time1, score1] = inputData.get_path_distance_time_score(path1);
-            auto [distance2, time2, score2] = inputData.get_path_distance_time_score(path2);
-
-            // возврат к исходному состоянию
-            std::swap(path1.tour, new_tour1);
-            std::swap(path2.tour, new_tour2);
+            auto [distance2, time2, score2] = inputData.EvalVirtualTour(path2, new_size2,
+                    [&](size_t pos) -> points_type {
+                        if (pos < split2) {
+                            return path2.tour[pos];
+                        } else {
+                            return path1.tour[split1 + (pos - split2)];
+                        }
+                    });
 
             if (distance1 <= path1.max_distance && distance2 <= path2.max_distance && 
                 time1 <= path1.max_time && time2 <= path2.max_time && 
@@ -263,13 +276,13 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
     return found;
 }
 
+// обмениваем у двух маршрутов отрезок
 bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &inputData) {
     auto initial_score = path1.score + path2.score;
 
     // длина отрезка ограничена четвертью минимального из двух маршрутов
     const size_t max_seg_len = std::min(path1.tour.size(), path2.tour.size()) / 4;
     if (max_seg_len == 0) {
-        ++stats.vertex_limit;
         return false;
     }
 
@@ -292,21 +305,22 @@ bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &input
         for (size_t start1 = 0; start1 + seg_len <= path1.tour.size(); ++start1) {
             for (size_t start2 = 0; start2 + seg_len <= path2.tour.size(); ++start2) {
 
-                std::swap_ranges(
-                    path1.tour.begin() + start1,
-                    path1.tour.begin() + start1 + seg_len,
-                    path2.tour.begin() + start2
-                );
-
-                auto [distance1, time1, score1] = inputData.get_path_distance_time_score(path1);
-                auto [distance2, time2, score2] = inputData.get_path_distance_time_score(path2);
-
-                // возврат к исходному состоянию
-                std::swap_ranges(
-                    path1.tour.begin() + start1,
-                    path1.tour.begin() + start1 + seg_len,
-                    path2.tour.begin() + start2
-                );
+                auto [distance1, time1, score1] = inputData.EvalVirtualTour(path1, path1.tour.size(),
+                        [&](size_t pos) -> points_type {
+                            if (start1 <= pos && pos < start1 + seg_len) {
+                                return path2.tour[start2 + (pos - start1)];
+                            } else {
+                                return path1.tour[pos];
+                            }
+                        });
+                auto [distance2, time2, score2] = inputData.EvalVirtualTour(path2, path2.tour.size(),
+                        [&](size_t pos) -> points_type {
+                            if (start2 <= pos && pos < start2 + seg_len) {
+                                return path1.tour[start1 + (pos - start2)];
+                            } else {
+                                return path2.tour[pos];
+                            }
+                        });
 
                 if (distance1 <= path1.max_distance && distance2 <= path2.max_distance && 
                     time1 <= path1.max_time && time2 <= path2.max_time && 
