@@ -459,16 +459,6 @@ bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputD
         dst.distance = best.dst_distance;
         dst.time = best.dst_time;
         dst.score = best.dst_score;
-
-        {auto [distance, time, score] = inputData.get_path_distance_time_score(src);
-        if (distance != src.distance || time != src.time || score != src.score) {
-            std::cout << "Bad news: " << distance << " " << src.distance << " " << time << " " <<  src.time << " " << score << " " <<  src.score << std::endl;
-        }}
-
-        {auto[distance, time, score] = inputData.get_path_distance_time_score(dst);
-        if (distance != dst.distance || time != dst.time || score != dst.score) {
-            std::cout << "Bad news: " << distance << " " << dst.distance << " " << time << " " <<  dst.time << " "  << score << " " <<  dst.score << std::endl;
-        }}
     }
 
     return found;
