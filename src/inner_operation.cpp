@@ -58,7 +58,7 @@ bool TInnerOperations::DoOperation(TPath& path, const TInputData& inputData,
 
     auto answer = (this->*kOperations[index])(path, inputData, context);
 
-    inputData.check_path_values(path);;
+    inputData.check_path_values(path);
     return answer;
 }
 
@@ -379,7 +379,11 @@ bool TInnerOperations::Drop(TPath& path, const TInputData& inputData, TInnerOper
         path.time = best.time;
         path.score = best.score;
 
-        inputData.unvisited_points.emplace_back(elem);
+        if (std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), elem) == inputData.unvisited_points.end()) {
+            inputData.unvisited_points.emplace_back(elem);
+        } else {
+            std::cout << "Error: want to add already unvisited point: " << elem << " for agent #" << path.agent_idx << "\n";
+        }
         inputData.visited_points.erase(elem);
     }
     return found;
