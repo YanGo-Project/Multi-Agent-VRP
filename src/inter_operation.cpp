@@ -14,10 +14,11 @@ namespace {
 bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
                                    EInterOperation operation) {
     static constexpr TOperationFn kOperations[] = {
-        &TInterOperations::Relocate,    // 0
-        &TInterOperations::Swap,        // 1
-        &TInterOperations::TwoOpt,      // 2
-        &TInterOperations::Cross,       // 3
+        &TInterOperations::Relocate,        // 0
+        &TInterOperations::Swap,            // 1
+        &TInterOperations::TwoOpt,          // 2
+        &TInterOperations::Cross,           // 3
+        &TInterOperations::RelocateSegment  //4
     };
     static constexpr uint8_t kOperationsSize =
         static_cast<uint8_t>(sizeof(kOperations) / sizeof(kOperations[0]));
@@ -357,6 +358,117 @@ bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &input
         path2.distance = best_cross.distance2;
         path2.time     = best_cross.time2;
         path2.score    = best_cross.score2;
+    }
+
+    return found;
+}
+
+// обмениваем отрезок между отрезками
+bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputData &inputData) {
+    auto initial_score = path1.score + path2.score;
+
+    struct best_operation {
+        bool from_first;
+        size_t from_idx;
+        size_t to_idx;
+        int64_t src_distance;
+        int64_t src_time;
+        int64_t src_score;
+        int64_t dst_distance;
+        int64_t dst_time;
+        int64_t dst_score;
+        size_t seg_len;
+    };
+
+    bool found = false;
+    best_operation best{};
+
+    // src -> dst: пробуем переместить отрезок из src в dst и ищем лучший вариант
+    auto try_relocate_direction = [&](TPath& src, TPath& dst, bool from_first) {
+        if (src.tour.size() <= src.min_vertexes || dst.tour.size() >= dst.max_vertexes) {
+            return;
+        }
+
+        const size_t max_seg_len = std::min(src.tour.size() - src.min_vertexes, dst.max_vertexes - dst.tour.size());
+
+        for (size_t seg_len = 1; seg_len <= max_seg_len; ++seg_len) {
+
+            for (size_t from = 0; from + seg_len <= src.tour.size(); ++from) {
+
+                auto [distance1, time1, score1] = inputData.EvalVirtualTour(src, src.tour.size() - seg_len,
+                        [&](size_t pos) -> points_type {
+                            if (pos < from) {
+                                return src.tour[pos];
+                            } else {
+                                return src.tour[pos + seg_len];
+                            }
+                        });
+
+                for (size_t to = 0; to <= dst.tour.size(); ++to) {
+
+                    auto [distance2, time2, score2] = inputData.EvalVirtualTour(dst, dst.tour.size() + seg_len,
+                            [&](size_t pos) -> points_type {
+                                if (to <= pos && pos < to + seg_len) {
+                                    return src.tour[from + (pos - to)];
+                                } else if (pos < to) {
+                                    return dst.tour[pos];
+                                } else {
+                                    return dst.tour[pos - seg_len];
+                                }
+                            });
+                    
+                    if (distance1 <= src.max_distance && distance2 <= dst.max_distance &&
+                        time1 <= src.max_time && time2 <= dst.max_time &&
+                        score1 + score2 > initial_score) {
+
+                        found = true;
+                        best = {
+                            .from_first   = from_first,
+                            .from_idx     = from,
+                            .to_idx       = to,
+                            .src_distance = distance1,
+                            .src_time     = time1,
+                            .src_score    = score1,
+                            .dst_distance = distance2,
+                            .dst_time     = time2,
+                            .dst_score    = score2,
+                            .seg_len      = seg_len,
+                        };
+                        initial_score = score1 + score2;
+                    }
+                }
+            }
+        }
+    };
+
+    try_relocate_direction(path1, path2, true);
+    try_relocate_direction(path2, path1, false);
+
+    if (found) {
+        TPath& src = best.from_first ? path1 : path2;
+        TPath& dst = best.from_first ? path2 : path1;
+
+        std::vector<TRoute::value_type> segment(src.tour.begin() + best.from_idx, src.tour.begin() + best.from_idx + best.seg_len);
+
+        src.tour.erase(src.tour.begin() + best.from_idx, src.tour.begin() + best.from_idx + best.seg_len);
+        dst.tour.insert(dst.tour.begin() + best.to_idx, segment.begin(), segment.end());
+
+        src.distance = best.src_distance;
+        src.time = best.src_time;
+        src.score = best.src_score;
+        dst.distance = best.dst_distance;
+        dst.time = best.dst_time;
+        dst.score = best.dst_score;
+
+        {auto [distance, time, score] = inputData.get_path_distance_time_score(src);
+        if (distance != src.distance || time != src.time || score != src.score) {
+            std::cout << "Bad news: " << distance << " " << src.distance << " " << time << " " <<  src.time << " " << score << " " <<  src.score << std::endl;
+        }}
+
+        {auto[distance, time, score] = inputData.get_path_distance_time_score(dst);
+        if (distance != dst.distance || time != dst.time || score != dst.score) {
+            std::cout << "Bad news: " << distance << " " << dst.distance << " " << time << " " <<  dst.time << " "  << score << " " <<  dst.score << std::endl;
+        }}
     }
 
     return found;
