@@ -8,13 +8,14 @@
 class TInterOperations {
 public:
     enum class EInterOperation : uint8_t {
-        Relocate = 0,
-        Swap     = 1,
-        TwoOpt   = 2,
-        Cross    = 3,
+        Relocate        = 0,
+        Swap            = 1,
+        TwoOpt          = 2,
+        Cross           = 3,
+        RelocateSegment = 4,
     };
 
-    static constexpr int kInterOperationsCount = 4;
+    static constexpr int kInterOperationsCount = 5;
 
     bool DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
                      EInterOperation operation);
@@ -26,4 +27,5 @@ private:
     bool Swap(TPath& path1, TPath& path2, const TInputData& inputData);
     bool TwoOpt(TPath& path1, TPath& path2, const TInputData& inputData);
     bool Cross(TPath& path1, TPath& path2, const TInputData& inputData);
+    bool RelocateSegment(TPath& path1, TPath& path2, const TInputData& inputData);
 };

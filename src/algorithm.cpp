@@ -36,7 +36,10 @@ bool DoInnerOptimization(TPath& path, const TInputData& inputData, const Optimiz
 
         bool improved = false;
 
-        if (inner_operation == TInnerOperations::EInnerOperation::PickUnvisited) {
+        if (
+            inner_operation == TInnerOperations::EInnerOperation::PickUnvisited ||
+            inner_operation == TInnerOperations::EInnerOperation::Drop
+        ) {
             if (unvisited_mutex.try_lock()) {
                 // std::cout << "Try pick unvisited\n";
                 improved = inner_ops.DoOperation(path, inputData, inner_operation_context, inner_operation);

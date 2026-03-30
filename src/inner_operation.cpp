@@ -8,6 +8,8 @@
 #include <utility>
 #include <random>
 
+#include <cassert>
+
 namespace {
     using points_type = TRoute::value_type;
 
@@ -43,16 +45,21 @@ bool TInnerOperations::DoOperation(TPath& path, const TInputData& inputData,
         &TInnerOperations::Shift,         // 2
         &TInnerOperations::TwoOpt,        // 3
         &TInnerOperations::OrOpt,         // 4
-        &TInnerOperations::PickUnvisited  // 5
+        &TInnerOperations::PickUnvisited, // 5
+        &TInnerOperations::Drop           // 6
     };
 
     constexpr std::size_t kOperationsCount = sizeof(kOperations) / sizeof(kOperations[0]);
     const auto index = static_cast<std::size_t>(static_cast<uint8_t>(operation));
+    assert(index < kOperationsCount);
     if (index >= kOperationsCount) {
         return false;
     }
 
-    return (this->*kOperations[index])(path, inputData, context);
+    auto answer = (this->*kOperations[index])(path, inputData, context);
+
+    inputData.check_path_values(path);
+    return answer;
 }
 
 // меняем местами соседние вершины
@@ -239,6 +246,7 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
         int64_t distance;
         int64_t time;
         int64_t score;
+        bool reversed;
     };
 
     bool found = false;
@@ -247,28 +255,36 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
     for (size_t from = 0; from + seg_len <= path.tour.size(); ++from) {
         for (size_t to = 0; to + seg_len <= path.tour.size(); ++to) {
             if (to == from) continue;
+            for (auto reversed : {true, false}) {
+                auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size(),
+                    [&](size_t pos) -> points_type {
+                        // если позиция из вставленного подотрезка 
+                        if (to <= pos && pos < to + seg_len) {
+                            if (!reversed) {
+                                return path.tour[from + (pos - to)];
+                            } else {
+                                return path.tour[from + (seg_len - 1 - (pos - to))];
+                            }
+                        }
+                        size_t original_pos = pos < to ? pos : pos - seg_len;
+                        original_pos = (original_pos < from) ? original_pos : original_pos + seg_len;
+                        return path.tour[original_pos];
+                    });
 
-            auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size(),
-                [&](size_t pos) -> points_type {
-                    // если позиция из вставленного подотрезка 
-                    if (to <= pos && pos < to + seg_len) {
-                        return path.tour[from + (pos - to)];
-                    }
-                    size_t original_pos = pos < to ? pos : pos - seg_len;
-                    original_pos = (original_pos < from) ? original_pos : original_pos + seg_len;
-                    return path.tour[original_pos];
-                });
-
-            if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
-                found = true;
-                best = {.from = from, .to = to, .distance = distance, .time = time, .score = score};
-                initial_score = score;
+                if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
+                    found = true;
+                    best = {.from = from, .to = to, .distance = distance, .time = time, .score = score, .reversed = reversed};
+                    initial_score = score;
+                }
             }
         }
     }
 
     if (found) {
         std::vector<TRoute::value_type> segment(path.tour.begin() + best.from, path.tour.begin() + best.from + seg_len);
+        if (best.reversed) {
+            std::reverse(segment.begin(), segment.end());
+        }
         path.tour.erase(path.tour.begin() + best.from, path.tour.begin() + best.from + seg_len);
         path.tour.insert(path.tour.begin() + best.to, segment.begin(), segment.end());
         path.distance = best.distance;
@@ -280,7 +296,7 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
 
 // пытается добавить еще непосещенную вершину в путь
 bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
-    if (path.tour.size() == path.max_vertexes) {
+    if (path.tour.size() >= path.max_vertexes) {
         return false;
     }
 
@@ -321,6 +337,54 @@ bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, T
         } else {
             std::cout << "Error: want delete already visited point: " << best.vertex << " for agent #" << path.agent_idx << "\n";
         }
+    }
+    return found;
+}
+
+// пытаемся удалить вершину из пути
+bool TInnerOperations::Drop(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
+    if (path.tour.size() <= path.min_vertexes) {
+        return false;
+    }
+
+    auto initial_score = path.score;
+
+    struct best_operation {size_t idx; int64_t distance, time, score; };
+    bool found = false;
+    best_operation best{};
+
+    for (size_t i = 0; i < path.tour.size(); ++i) {
+
+        auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size() - 1,
+            [&](size_t pos) -> points_type {
+                if (pos < i) {
+                    return path.tour[pos];
+                } else {
+                    return path.tour[pos + 1];
+                }
+            });
+
+        if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
+            found = true;
+            initial_score = score;
+            best = {.idx = i, .distance = distance, .time = time, .score = score};
+        }
+                
+    }
+
+    if (found) {
+        auto elem = path.tour[best.idx];
+        path.tour.erase(path.tour.begin() + best.idx);
+        path.distance = best.distance;
+        path.time = best.time;
+        path.score = best.score;
+
+        if (std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), elem) == inputData.unvisited_points.end()) {
+            inputData.unvisited_points.emplace_back(elem);
+        } else {
+            std::cout << "Error: want to add already unvisited point: " << elem << " for agent #" << path.agent_idx << "\n";
+        }
+        inputData.visited_points.erase(elem);
     }
     return found;
 }

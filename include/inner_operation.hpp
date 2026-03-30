@@ -16,9 +16,10 @@ public:
         TwoOpt          = 3,
         OrOpt           = 4,
         PickUnvisited   = 5,
+        Drop            = 6,
     };
 
-    static constexpr uint8_t kInnerOperationsCount = 6;
+    static constexpr uint8_t kInnerOperationsCount = 7;
 
     struct TInnerOperationContext {
         size_t orOptSize;
@@ -37,4 +38,5 @@ private:
     bool TwoOpt(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
     bool OrOpt(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
     bool PickUnvisited(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
+    bool Drop(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
 };

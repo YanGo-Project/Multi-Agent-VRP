@@ -69,13 +69,13 @@ struct TInputData {
 
     [[nodiscard]] std::tuple<int64_t, int64_t, int64_t> get_path_distance_time_score(const TPath& path) const;
 
+    void check_path_values(const TPath& path) const;
+
     // get_vertex(i) -> i-я клиентская вершина виртуального тура.
-    // tour_size — число клиентских вершин (для PickUnvisited = n+1, иначе = n).
+    // tour_size — число клиентских вершин
     template<typename GetVertex>
     [[nodiscard]] std::tuple<int64_t, int64_t, int64_t>
     EvalVirtualTour(const TPath& path, size_t tour_size, GetVertex&& get_vertex) const;
-
-    std::map<points_type, points_type> from_new_to_old{};
 
     /// meta информация для многоагентного варианта
     mutable std::unordered_set<points_type> visited_points{};
