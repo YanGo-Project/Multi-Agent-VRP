@@ -69,6 +69,8 @@ struct TInputData {
 
     [[nodiscard]] std::tuple<int64_t, int64_t, int64_t> get_path_distance_time_score(const TPath& path) const;
 
+    void check_path_values(const TPath& path) const;
+
     // get_vertex(i) -> i-я клиентская вершина виртуального тура.
     // tour_size — число клиентских вершин
     template<typename GetVertex>

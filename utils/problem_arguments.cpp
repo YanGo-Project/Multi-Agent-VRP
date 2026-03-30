@@ -107,6 +107,16 @@ TInputData::get_path_distance_time_score(const TPath& path) const {
         [&](size_t i) -> points_type { return path.tour[i]; });
 }
 
+void TInputData::check_path_values(const TPath& path) const {
+    auto [distance, time, score] = get_path_distance_time_score(path);
+    if (distance != path.distance || time != path.time || score != path.score) {
+        std::cout << "We have some bad news for path: " << path << "\n"
+        << distance << " " << path.distance << " " 
+        << time << " " << path.time << " " 
+        << score << " " << path.score << std::endl;
+    }
+}
+
 std::ostream &operator<<(std::ostream &os, const TInputData &data) {
     os << "points_count: " << data.points_count << "\n";
 

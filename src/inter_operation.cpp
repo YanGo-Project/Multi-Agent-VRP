@@ -29,7 +29,11 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
         return false;
     }
 
-    return (this->*kOperations[idx])(path1, path2, inputData);
+    auto answer = (this->*kOperations[idx])(path1, path2, inputData);
+
+    inputData.check_path_values(path1);
+    inputData.check_path_values(path2);
+    return answer;
 }
 
 // переместить одну вершину пути в другой путь

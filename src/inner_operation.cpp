@@ -56,7 +56,10 @@ bool TInnerOperations::DoOperation(TPath& path, const TInputData& inputData,
         return false;
     }
 
-    return (this->*kOperations[index])(path, inputData, context);
+    auto answer = (this->*kOperations[index])(path, inputData, context);
+
+    inputData.check_path_values(path);;
+    return answer;
 }
 
 // меняем местами соседние вершины
@@ -363,6 +366,7 @@ bool TInnerOperations::Drop(TPath& path, const TInputData& inputData, TInnerOper
 
         if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
             found = true;
+            initial_score = score;
             best = {.idx = i, .distance = distance, .time = time, .score = score};
         }
                 
