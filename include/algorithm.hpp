@@ -15,6 +15,4 @@ struct OptimizationContext {
 
 bool DoInnerOptimization(TPath& path, const TInputData& inputData, const OptimizationContext& context);
 
-bool DoInterOptimization(TPath& path1, TPath& path2, const TInputData& inputData);
-
 void Optimize(std::vector<TPath>& paths, const TInputData& inputData, const OptimizationContext& context);

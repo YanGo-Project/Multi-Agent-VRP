@@ -17,9 +17,11 @@ public:
         OrOpt           = 4,
         PickUnvisited   = 5,
         Drop            = 6,
+        Replace         = 7,  // Gunawan et al. (2015) «ILS for TOPTW»
+        DoubleBridge    = 8,  // Ropke & Pisinger (2006)
     };
 
-    static constexpr uint8_t kInnerOperationsCount = 7;
+    static constexpr uint8_t kInnerOperationsCount = 9;
 
     struct TInnerOperationContext {
         size_t orOptSize;
@@ -39,4 +41,6 @@ private:
     bool OrOpt(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
     bool PickUnvisited(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
     bool Drop(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
+    bool Replace(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
+    bool DoubleBridge(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
 };
