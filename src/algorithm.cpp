@@ -14,6 +14,12 @@ namespace {
 std::mutex unvisited_mutex;
 }
 
+constexpr uint64_t kNeedUseMutex = 
+    (1u << static_cast<uint8_t>(TInnerOperations::EInnerOperation::PickUnvisited)) |
+    (1u << static_cast<uint8_t>(TInnerOperations::EInnerOperation::Drop)) |
+    (1u << static_cast<uint8_t>(TInnerOperations::EInnerOperation::Replace));
+
+
 bool DoInnerOptimization(TPath& path, const TInputData& inputData, const OptimizationContext& context) {
     size_t no_improve = 0;
     bool any_improved = false;
@@ -35,13 +41,10 @@ bool DoInnerOptimization(TPath& path, const TInputData& inputData, const Optimiz
         TInnerOperations::EInnerOperation inner_operation = static_cast<TInnerOperations::EInnerOperation>(op_dist(rng));
 
         bool improved = false;
+        const bool need_mutex = (kNeedUseMutex >> static_cast<uint8_t>(inner_operation)) & 1;
 
-        if (
-            inner_operation == TInnerOperations::EInnerOperation::PickUnvisited ||
-            inner_operation == TInnerOperations::EInnerOperation::Drop
-        ) {
+        if (need_mutex) {
             if (unvisited_mutex.try_lock()) {
-                // std::cout << "Try pick unvisited\n";
                 improved = inner_ops.DoOperation(path, inputData, inner_operation_context, inner_operation);
                 unvisited_mutex.unlock();
             } else {
@@ -70,7 +73,6 @@ bool DoInterOptimization(TPath& path1, TPath& path2, const TInputData& inputData
     TInterOperations inter_ops;
     auto dst = op_dist(rng);
     const auto op = static_cast<TInterOperations::EInterOperation>(dst);
-    // std::cout << "InterOperation: " << (uint32_t)dst << std::endl;
     return inter_ops.DoOperation(path1, path2, inputData, op);
 }
 

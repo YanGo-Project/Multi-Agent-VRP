@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
         .inter_iterations_without_improve = static_cast<size_t>(args.meta.max_iter_without_solution),
         .max_or_opt_size                  = 10,
         .unvisited_candidates             = 10,
-        .take_first_improve               = true,
+        .take_first_improve               = false,
     };
 
     auto paths = FisrtStep(input, args, opt_ctx);

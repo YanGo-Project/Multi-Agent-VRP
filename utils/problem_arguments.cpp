@@ -1,6 +1,6 @@
 #include "problem_arguments_impl.hpp"
 #include <unistd.h>
-#include <ostream>
+#include <iostream>
 
 #ifdef DEBUG
 #include "debug.h"

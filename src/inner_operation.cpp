@@ -46,7 +46,9 @@ bool TInnerOperations::DoOperation(TPath& path, const TInputData& inputData,
         &TInnerOperations::TwoOpt,        // 3
         &TInnerOperations::OrOpt,         // 4
         &TInnerOperations::PickUnvisited, // 5
-        &TInnerOperations::Drop           // 6
+        &TInnerOperations::Drop,          // 6
+        &TInnerOperations::Replace,       // 7
+        &TInnerOperations::DoubleBridge,  // 8
     };
 
     constexpr std::size_t kOperationsCount = sizeof(kOperations) / sizeof(kOperations[0]);
@@ -387,4 +389,144 @@ bool TInnerOperations::Drop(TPath& path, const TInputData& inputData, TInnerOper
         inputData.visited_points.erase(elem);
     }
     return found;
+}
+
+// заменить вершину из пути на непосещенную
+bool TInnerOperations::Replace(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
+    if (path.tour.empty() || inputData.unvisited_points.empty()) {
+        return false;
+    }
+
+    auto initial_score = path.score;
+
+    struct best_operation {
+        size_t remove_idx;
+        points_type insert_vertex;
+        size_t insert_pos;
+        int64_t distance, time, score;
+    };
+
+    bool found = false;
+    best_operation best{};
+
+    auto candidates = ChooseUnvisitedVertexes(inputData, std::max(context.unvisiedCandidatesCount, 1ul));
+
+    for (size_t remove_idx = 0; remove_idx < path.tour.size(); ++remove_idx) {
+        for (auto candidate : candidates) {
+            for (size_t insert_pos = 0; insert_pos < path.tour.size(); ++insert_pos) {
+
+                auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size(),
+                    [&](size_t pos) -> points_type {
+                        if (pos == insert_pos) {
+                            return candidate;
+                        }
+
+                        // индекс в туре после удаления
+                        size_t j = pos < insert_pos ? pos : pos - 1;
+
+                        // маппинг к исходному
+                        if (j < remove_idx) {
+                            return path.tour[j];
+                        } else {
+                            return path.tour[j + 1];
+                        }
+                    });
+
+                if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
+                    found = true;
+                    best = {
+                        .remove_idx = remove_idx, 
+                        .insert_vertex = candidate, 
+                        .insert_pos = insert_pos, 
+                        .distance = distance, 
+                        .time = time, 
+                        .score = score
+                    };
+                    initial_score = score;
+                }
+            }
+        }
+    }
+
+    if (found) {
+        const auto removed_vertex = path.tour[best.remove_idx];
+
+        path.tour.erase(path.tour.begin() + best.remove_idx);
+        path.tour.insert(path.tour.begin() + best.insert_pos, best.insert_vertex);
+
+        path.distance = best.distance;
+        path.time = best.time;
+        path.score = best.score;
+
+        inputData.visited_points.erase(removed_vertex);
+        inputData.visited_points.insert(best.insert_vertex);
+
+        auto it_added= std::find(inputData.unvisited_points.begin(),
+                                inputData.unvisited_points.end(), best.insert_vertex);
+        if (it_added != inputData.unvisited_points.end()) {
+            inputData.unvisited_points.erase(it_added);
+        } else {
+            std::cout << "Error Replace: insert_vertex not in unvisited: "
+                      << best.insert_vertex << " agent #" << path.agent_idx << "\n";
+        }
+        inputData.unvisited_points.push_back(removed_vertex);
+    }
+    return found;
+}
+
+// Источник: Vansteenwegen et al. (2009) «ILS for TOPTW» (Computers & OR)
+bool TInnerOperations::DoubleBridge(TPath& path, const TInputData& inputData, TInnerOperationContext&) {
+
+    if (path.tour.size() < 8) {
+        return false;
+    }
+
+    thread_local std::mt19937 rng{std::random_device{}()};
+
+    std::uniform_int_distribution<size_t> dist(1, path.tour.size() - 1);
+    size_t cut1 = dist(rng);
+    size_t cut2 = dist(rng);
+    size_t cut3 = dist(rng);
+
+    // Убеждаемся что разрезы различны и упорядочены
+    while (cut1 == cut2 || cut1 == cut3 || cut2 == cut3) {
+        cut1 = dist(rng);
+        cut2 = dist(rng);
+        cut3 = dist(rng);
+    }
+
+    if (cut1 > cut2) {
+        std::swap(cut1, cut2);
+    }
+    if (cut2 > cut3) {
+        std::swap(cut2, cut3);
+    }
+    if (cut1 > cut2){ 
+        std::swap(cut1, cut2);
+    }
+
+    // сегменты A=[0,cut1), B=[cut1,cut2), C=[cut2,cut3), D=[cut3,n)
+    // Новый порядок: A-B-C-D -> A-C-B-D
+    TRoute new_tour;
+    new_tour.reserve(path.tour.size());
+    new_tour.insert(new_tour.end(), path.tour.begin(), path.tour.begin() + cut1);
+    new_tour.insert(new_tour.end(), path.tour.begin() + cut2, path.tour.begin() + cut3);
+    new_tour.insert(new_tour.end(), path.tour.begin() + cut1, path.tour.begin() + cut2);
+    new_tour.insert(new_tour.end(), path.tour.begin() + cut3, path.tour.end());
+
+    std::swap(path.tour, new_tour);
+    auto [distance, time, score] = inputData.get_path_distance_time_score(path);
+    if (distance <= path.max_distance && time <= path.max_time && score > path.score) {
+        path.distance = distance;
+        path.time = time;
+        path.score = score;
+
+        std::cout << "Imporved double bridge" << std::endl;
+
+        return true;
+    } else {
+        std::swap(path.tour, new_tour);
+    }
+
+    return false;
 }
