@@ -15,9 +15,9 @@ std::mutex unvisited_mutex;
 }
 
 constexpr uint64_t kNeedUseMutex = 
-    (1u << static_cast<uint8_t>(TInnerOperations::EInnerOperation::PickUnvisited)) |
-    (1u << static_cast<uint8_t>(TInnerOperations::EInnerOperation::Drop)) |
-    (1u << static_cast<uint8_t>(TInnerOperations::EInnerOperation::Replace));
+    (uint64_t{1} << static_cast<uint8_t>(TInnerOperations::EInnerOperation::PickUnvisited)) |
+    (uint64_t{1} << static_cast<uint8_t>(TInnerOperations::EInnerOperation::Drop)) |
+    (uint64_t{1} << static_cast<uint8_t>(TInnerOperations::EInnerOperation::Replace));
 
 
 bool DoInnerOptimization(TPath& path, const TInputData& inputData, const OptimizationContext& context) {

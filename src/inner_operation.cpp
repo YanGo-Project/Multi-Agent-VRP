@@ -462,14 +462,20 @@ bool TInnerOperations::Replace(TPath& path, const TInputData& inputData, TInnerO
         inputData.visited_points.insert(best.insert_vertex);
 
         auto it_added= std::find(inputData.unvisited_points.begin(),
-                                inputData.unvisited_points.end(), best.insert_vertex);
+                                 inputData.unvisited_points.end(), best.insert_vertex);
         if (it_added != inputData.unvisited_points.end()) {
             inputData.unvisited_points.erase(it_added);
         } else {
-            std::cout << "Error Replace: insert_vertex not in unvisited: "
-                      << best.insert_vertex << " agent #" << path.agent_idx << "\n";
+            std::cout << "Error Replace: insert_vertex:" <<  best.insert_vertex << " not in unvisited for agent #"  << path.agent_idx << std::endl;
         }
-        inputData.unvisited_points.push_back(removed_vertex);
+
+        auto it_removed = std::find(inputData.unvisited_points.begin(),
+                                    inputData.unvisited_points.end(), removed_vertex);
+        if (it_removed == inputData.unvisited_points.end()) {
+            inputData.unvisited_points.push_back(removed_vertex);
+        } else {
+            std::cout << "Error Replace: removed_vertex: " << removed_vertex << " already in unvisited for agent #" << path.agent_idx << std::endl;
+        }
     }
     return found;
 }
@@ -520,9 +526,6 @@ bool TInnerOperations::DoubleBridge(TPath& path, const TInputData& inputData, TI
         path.distance = distance;
         path.time = time;
         path.score = score;
-
-        std::cout << "Imporved double bridge" << std::endl;
-
         return true;
     } else {
         std::swap(path.tour, new_tour);

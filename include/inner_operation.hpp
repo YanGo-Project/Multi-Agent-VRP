@@ -41,6 +41,6 @@ private:
     bool OrOpt(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
     bool PickUnvisited(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
     bool Drop(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
-    bool Replace(TPath& path, const TInputData& inputData, TInnerOperationContext& context);\
+    bool Replace(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
     bool DoubleBridge(TPath& path, const TInputData& inputData, TInnerOperationContext& context);
 };
