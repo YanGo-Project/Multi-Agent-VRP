@@ -40,6 +40,11 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
 bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData) {
     auto initial_score = path1.score + path2.score;
 
+    // в случае если один из путей не имеет минимального числа вершин, то отдаем его добору приоритет над целевой функцией
+    if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
+        initial_score = std::numeric_limits<decltype(initial_score)>::min();
+    }
+
     struct best_operation {
         bool from_first;
         size_t from_idx;
