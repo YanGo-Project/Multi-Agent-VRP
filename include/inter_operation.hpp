@@ -13,6 +13,7 @@ public:
         TwoOpt          = 2,
         Cross           = 3,
         RelocateSegment = 4,
+        Last            = 5,
     };
 
     static constexpr int kInterOperationsCount = 5;

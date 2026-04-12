@@ -4,6 +4,7 @@
 
 #include "path.hpp"
 #include "../utils/problem_arguments.hpp"
+#include "../include/operator_selector.hpp"
 
 struct OptimizationContext {
     size_t inner_iterations_without_improve = 50;
@@ -12,7 +13,5 @@ struct OptimizationContext {
     size_t unvisited_candidates = 10;
     bool take_first_improve = false;
 };
-
-bool DoInnerOptimization(TPath& path, const TInputData& inputData, const OptimizationContext& context);
 
 void Optimize(std::vector<TPath>& paths, const TInputData& inputData, const OptimizationContext& context);

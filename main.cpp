@@ -63,7 +63,7 @@ TPath ChooseBestCandidatePath(std::vector<FirstStepAnswer>&& candidates, TInputD
     threads.reserve(paths.size());
     for (size_t i = 0; i < paths.size(); ++i) {
         threads.emplace_back([&paths, &input, &ctx, i] {
-           DoInnerOptimization(paths[i], input, ctx); 
+        //    DoInnerOptimization(paths[i], input, ctx); 
         });
     }
 
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     }
 
     OptimizationContext opt_ctx{
-        .inner_iterations_without_improve = 200,
+        .inner_iterations_without_improve = static_cast<size_t>(args.meta.max_iter_without_solution),
         .inter_iterations_without_improve = static_cast<size_t>(args.meta.max_iter_without_solution),
         .max_or_opt_size                  = 10,
         .unvisited_candidates             = 10,

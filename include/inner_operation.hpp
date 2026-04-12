@@ -19,6 +19,7 @@ public:
         Drop            = 6,
         Replace         = 7,  // Gunawan et al. (2015) «ILS for TOPTW»
         DoubleBridge    = 8,  // Ropke & Pisinger (2006)
+        Last            = 9,
     };
 
     static constexpr uint8_t kInnerOperationsCount = 9;
