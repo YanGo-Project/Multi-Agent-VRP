@@ -303,6 +303,10 @@ bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, T
     }
 
     auto initial_score = path.score;
+    // отдаем приоритет набору минимального числа вершин в маршруте чем целевой функции
+    if (path.tour.size() < path.min_vertexes) {
+        initial_score = std::numeric_limits<decltype(initial_score)>::min() + 1;
+    }
 
     auto candidates_list = ChooseUnvisitedVertexes(inputData, std::max(context.unvisiedCandidatesCount, 1ul));
 
