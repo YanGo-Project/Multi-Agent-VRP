@@ -18,14 +18,12 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
         &TInterOperations::Swap,            // 1
         &TInterOperations::TwoOpt,          // 2
         &TInterOperations::Cross,           // 3
-        &TInterOperations::RelocateSegment  //4
+        &TInterOperations::RelocateSegment  // 4
     };
-    static constexpr uint8_t kOperationsSize =
-        static_cast<uint8_t>(sizeof(kOperations) / sizeof(kOperations[0]));
 
     const uint8_t idx = static_cast<uint8_t>(operation);
-    assert(idx < kOperationsSize);
-    if (idx >= kOperationsSize) {
+    assert(idx < kInterOperationsCount);
+    if (idx >= kInterOperationsCount) {
         return false;
     }
 
