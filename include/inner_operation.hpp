@@ -22,7 +22,7 @@ public:
         Last            = 9,
     };
 
-    static constexpr uint8_t kInnerOperationsCount = 9;
+    static constexpr uint8_t kInnerOperationsCount = static_cast<uint8_t>(EInnerOperation::Last);
 
     struct TInnerOperationContext {
         size_t orOptSize;

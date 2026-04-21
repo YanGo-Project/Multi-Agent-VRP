@@ -16,7 +16,7 @@ public:
         Last            = 5,
     };
 
-    static constexpr int kInterOperationsCount = 5;
+    static constexpr int kInterOperationsCount = static_cast<uint8_t>(EInterOperation::Last);
 
     bool DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
                      EInterOperation operation);
