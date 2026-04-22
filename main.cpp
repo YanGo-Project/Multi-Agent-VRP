@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
         .inter_iterations_without_improve = max_inter,
         .max_or_opt_size                  = 10,
         .unvisited_candidates             = 10,
-        .take_first_improve               = true,
+        .take_first_improve               = false,
         .time_limit_seconds               = args.time,
     };
 

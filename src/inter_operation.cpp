@@ -500,8 +500,8 @@ bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputD
     temp.tour = std::move(combined);
     temp.depo = path1.depo;
     temp.agent_idx = path1.agent_idx;
-    temp.max_distance = 2 * (path1.max_distance + path2.max_distance);
-    temp.max_time = 2 * (path1.max_time + path2.max_time);
+    temp.max_distance = std::numeric_limits<decltype(temp.max_distance)>::max();
+    temp.max_time = std::numeric_limits<decltype(temp.max_time)>::max();
     temp.max_vertexes = static_cast<decltype(temp.max_vertexes)>(combined_size);
     temp.min_vertexes = 0;
     std::tie(temp.distance, temp.time, temp.score) = inputData.EvalVirtualTour(

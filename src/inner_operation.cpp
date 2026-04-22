@@ -325,6 +325,7 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
                 if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
                     found = true;
                     best = {.from = from, .to = to, .distance = distance, .time = time, .score = score, .reversed = reversed};
+                    initial_score = score;
 
                     if (context.takeFirstImprove) {
                         return apply_best(best);

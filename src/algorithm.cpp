@@ -13,37 +13,6 @@
 
 namespace {
 std::mutex unvisited_mutex;
-
-void RunGlueWarmup(
-    std::vector<TPath>& paths,
-    const TInputData& inputData,
-    const OptimizationContext& context,
-    std::mt19937& rng
-) {
-    if (paths.size() < 2 || context.glue_warmup_attempts == 0) {
-        return;
-    }
-    TInterOperations inter_ops;
-    const size_t inner_lim =  context.glue_max_inner_iterations;
-    TInterOperations::TInterOperationContext inter_ctx{
-        .max_glue_inner_optimization_iterations = inner_lim
-    };
-    std::uniform_int_distribution<size_t> dist(0, paths.size() - 1);
-    for (size_t k = 0; k < context.glue_warmup_attempts; ++k) {
-        size_t p1 = dist(rng);
-        size_t p2 = dist(rng);
-        while (p1 == p2) {
-            p2 = dist(rng);
-        }
-        inter_ops.DoOperation(
-            paths[p1],
-            paths[p2],
-            inputData,
-            TInterOperations::EInterOperation::Glue,
-            inter_ctx
-        );
-    }
-}
 } // namespace
 
 constexpr uint64_t kNeedUseMutex = 
@@ -154,8 +123,6 @@ void Optimize(
     selector.Init(paths.size(), selectorConfig);
 
     std::vector<uint8_t> inner_improved(paths.size(), 0);
-
-    RunGlueWarmup(paths, inputData, context, rng);
 
     std::optional<std::chrono::steady_clock::time_point> deadline;
     if (context.time_limit_seconds > 0) {

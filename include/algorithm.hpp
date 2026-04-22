@@ -17,8 +17,6 @@ struct OptimizationContext {
     // не вызывать внутренние операции, которые добавляют/удаляют/меняют набор клиентов в туре
     bool inner_preserve_vertex_set = false;
     size_t glue_max_inner_iterations = 200;
-    // количество случайных пар маршрутов прогнать через Glue до основного цикла
-    size_t glue_warmup_attempts = 48;
     // лимит работы в секундах
     uint64_t time_limit_seconds = 0;
 };
