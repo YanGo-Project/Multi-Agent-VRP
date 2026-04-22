@@ -12,6 +12,24 @@ struct OptimizationContext {
     size_t max_or_opt_size = 10;
     size_t unvisited_candidates = 10;
     bool take_first_improve = false;
+    /// Не вызывать внутренние операции, которые добавляют/удаляют/меняют набор клиентов в туре.
+    bool inner_preserve_vertex_set = false;
 };
+
+bool DoInnerOptimization(
+    TPath& path,
+    const TInputData& inputData,
+    const OptimizationContext& context,
+    TOperatorSelector& selector
+);
+
+
+bool DoInterOptimization(
+    TPath& path1,
+    TPath& path2,
+    const TInputData& inputData,
+    TOperatorSelector& selector,
+    std::mt19937& rng
+);
 
 void Optimize(std::vector<TPath>& paths, const TInputData& inputData, const OptimizationContext& context);

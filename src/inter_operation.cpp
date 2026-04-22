@@ -1,8 +1,11 @@
 #include "../include/inter_operation.hpp"
+#include "../include/algorithm.hpp"
+#include "../include/operator_selector.hpp"
 #include "../utils/problem_arguments_impl.hpp"
 
 #include <algorithm>
 #include <cassert>
+#include <limits>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -18,7 +21,8 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
         &TInterOperations::Swap,            // 1
         &TInterOperations::TwoOpt,          // 2
         &TInterOperations::Cross,           // 3
-        &TInterOperations::RelocateSegment  // 4
+        &TInterOperations::RelocateSegment, // 4
+        &TInterOperations::Glue,             // 5
     };
 
     const uint8_t idx = static_cast<uint8_t>(operation);
@@ -469,4 +473,113 @@ bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputD
     }
 
     return found;
+}
+
+// Склейка туров, локальная перестановка без смены множества вершин, затем лучший разрез по ДП/перебору
+// с возвратом к исходным депо агентов. Внутренняя фаза использует depo первого маршрута как опорную точку
+// для EvalVirtualTour; финальная оценка разреза — с реальными depo и лимитами каждого агента.
+bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputData) {
+    int64_t initial_score = path1.score + path2.score;
+    if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
+        initial_score = std::numeric_limits<int64_t>::min();
+    }
+
+    TRoute combined;
+    combined.reserve(path1.tour.size() + path2.tour.size());
+    combined.insert(combined.end(), path1.tour.begin(), path1.tour.end());
+    combined.insert(combined.end(), path2.tour.begin(), path2.tour.end());
+    const size_t combined_size = combined.size();
+    if (combined_size == 0) {
+        return false;
+    }
+
+    TPath temp;
+    temp.tour = std::move(combined);
+    temp.depo = path1.depo;
+    temp.agent_idx = path1.agent_idx;
+    temp.max_distance = 2 * (path1.max_distance + path2.max_distance);
+    temp.max_time = 2 * (path1.max_time + path2.max_time);
+    temp.max_vertexes = static_cast<decltype(temp.max_vertexes)>(combined_size);
+    temp.min_vertexes = 0;
+    std::tie(temp.distance, temp.time, temp.score) = inputData.EvalVirtualTour(
+        temp, temp.tour.size(),
+        [&](size_t pos) -> points_type { return temp.tour[pos]; });
+
+    OptimizationContext inner_ctx;
+    inner_ctx.inner_preserve_vertex_set = true;
+    inner_ctx.inner_iterations_without_improve = 200;
+
+    TOperatorSelector selector;
+    selector.Init(inputData.agents_count);
+    DoInnerOptimization(temp, inputData, inner_ctx, selector);
+
+    if (path1.max_vertexes > combined_size || path2.max_vertexes > combined_size) {
+        return false;
+    }
+
+    const size_t min_split = path1.min_vertexes;
+    const size_t max_split = std::min<size_t>(path1.max_vertexes, combined_size - path2.min_vertexes);
+    if (min_split > max_split) {
+        return false;
+    }
+
+    struct best_operation {
+        size_t split;
+        int64_t first_time;
+        int64_t first_score;
+        int64_t first_distance;
+        int64_t second_time;
+        int64_t second_score;
+        int64_t second_distance;
+    };
+
+
+    bool found = false;
+    best_operation best_glue{};
+
+    for (size_t split = min_split; split <= max_split; ++split) {
+        const size_t second_size = combined_size - split;
+        if (second_size < path2.min_vertexes || second_size > path2.max_vertexes) {
+            continue;
+        }
+        auto [d1, t1, s1] = inputData.EvalVirtualTour(path1, split, [&](size_t pos) -> points_type {
+            return temp.tour[pos];
+        });
+        if (d1 > path1.max_distance || t1 > path1.max_time) {
+            continue;
+        }
+        auto [d2, t2, s2] = inputData.EvalVirtualTour(path2, second_size, [&](size_t pos) -> points_type {
+            return temp.tour[split + pos];
+        });
+        if (d2 > path2.max_distance || t2 > path2.max_time) {
+            continue;
+        }
+        if (s1 + s2 > initial_score) {
+            found = true;
+            best_glue = {
+                .split = split,
+                .first_time = t1,
+                .first_score = s1,
+                .first_distance = d1,
+                .second_time = t2,
+                .second_score = s2,
+                .second_distance = d2,
+            };
+            initial_score = s1 + s2;
+        }
+    }
+
+    if (!found) {
+        return false;
+    }
+
+    path1.tour.assign(temp.tour.begin(), temp.tour.begin() + best_glue.split);
+    path2.tour.assign(temp.tour.begin() + best_glue.split, temp.tour.end());
+    path1.distance = best_glue.first_distance;
+    path1.time = best_glue.first_time;
+    path1.score = best_glue.first_score;
+    path2.distance = best_glue.second_distance;
+    path2.time = best_glue.second_time;
+    path2.score = best_glue.second_score;
+    return true;
 }

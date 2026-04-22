@@ -13,7 +13,8 @@ public:
         TwoOpt          = 2,
         Cross           = 3,
         RelocateSegment = 4,
-        Last            = 5,
+        Glue            = 5,
+        Last            = 6,
     };
 
     static constexpr int kInterOperationsCount = static_cast<uint8_t>(EInterOperation::Last);
@@ -29,4 +30,5 @@ private:
     bool TwoOpt(TPath& path1, TPath& path2, const TInputData& inputData);
     bool Cross(TPath& path1, TPath& path2, const TInputData& inputData);
     bool RelocateSegment(TPath& path1, TPath& path2, const TInputData& inputData);
+    bool Glue(TPath& path1, TPath& path2, const TInputData& inputData);
 };

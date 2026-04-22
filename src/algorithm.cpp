@@ -47,6 +47,10 @@ bool DoInnerOptimization(
         bool improved = false;
         const bool need_mutex = (kNeedUseMutex >> static_cast<uint8_t>(inner_operation)) & 1;
 
+        if(need_mutex && context.inner_preserve_vertex_set) {
+            continue;
+        }
+ 
         if (need_mutex) {
             if (unvisited_mutex.try_lock()) {
                 improved = inner_ops.DoOperation(path, inputData, inner_operation_context, inner_operation);
