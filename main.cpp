@@ -123,12 +123,16 @@ int main(int argc, char *argv[]) {
         return -2;
     }
 
+    const size_t max_inter = static_cast<size_t>(std::max(1, args.meta.max_iter_without_solution));
+    const size_t inner_stagn = std::clamp(max_inter / 18, size_t{32}, size_t{240});
+
     OptimizationContext opt_ctx{
-        .inner_iterations_without_improve = static_cast<size_t>(args.meta.max_iter_without_solution),
-        .inter_iterations_without_improve = static_cast<size_t>(args.meta.max_iter_without_solution),
+        .inner_iterations_without_improve = inner_stagn,
+        .inter_iterations_without_improve = max_inter,
         .max_or_opt_size                  = 10,
         .unvisited_candidates             = 10,
-        .take_first_improve               = false,
+        .take_first_improve               = true,
+        .time_limit_seconds               = args.time,
     };
 
     auto paths = FisrtStep(input, args, opt_ctx);

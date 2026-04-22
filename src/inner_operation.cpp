@@ -2,13 +2,13 @@
 #include "../utils/problem_arguments_impl.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <iomanip>
 #include <iostream>
-#include <vector>
-#include <utility>
+#include <limits>
 #include <random>
-
-#include <cassert>
+#include <utility>
+#include <vector>
 
 namespace {
     using points_type = TRoute::value_type;
@@ -64,12 +64,20 @@ bool TInnerOperations::DoOperation(TPath& path, const TInputData& inputData,
 }
 
 // меняем местами соседние вершины
-bool TInnerOperations::SwapAdjacent(TPath& path, const TInputData& inputData, TInnerOperationContext&) {
+bool TInnerOperations::SwapAdjacent(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
     auto initial_score = path.score;
 
     struct best_operation { size_t i; int64_t distance, time, score; };
     bool found = false;
     best_operation best{};
+
+    const auto apply_best = [&](const best_operation& b) -> bool {
+        std::swap(path.tour[b.i], path.tour[b.i + 1]);
+        path.distance = b.distance;
+        path.time = b.time;
+        path.score = b.score;
+        return true;
+    };
 
     for (size_t i = 0; i + 1 < path.tour.size(); ++i) {
         // виртуально меняем местами вершины tour[i] и toru[i+1]
@@ -84,20 +92,21 @@ bool TInnerOperations::SwapAdjacent(TPath& path, const TInputData& inputData, TI
             found = true;
             best = {.i = i, .distance = distance, .time = time, .score = score};
             initial_score = score;
+
+            if (context.takeFirstImprove) {
+                return apply_best(best);
+            }
         }
     }
 
     if (found) {
-        std::swap(path.tour[best.i], path.tour[best.i + 1]);
-        path.distance = best.distance;
-        path.time = best.time;
-        path.score = best.score;
+        return apply_best(best);
     }
-    return found;
+    return false;
 }
 
 // меняет местами две любые вершины
-bool TInnerOperations::SwapAny(TPath& path, const TInputData& inputData, TInnerOperationContext&) {
+bool TInnerOperations::SwapAny(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
     auto initial_score = path.score;
 
     struct best_operation {
@@ -110,6 +119,14 @@ bool TInnerOperations::SwapAny(TPath& path, const TInputData& inputData, TInnerO
 
     bool found = false;
     best_operation best{};
+
+    const auto apply_best = [&](const best_operation& b) -> bool {
+        std::swap(path.tour[b.i], path.tour[b.j]);
+        path.distance = b.distance;
+        path.time = b.time;
+        path.score = b.score;
+        return true;
+    };
 
     for (size_t i = 0; i < path.tour.size(); ++i) {
         for (size_t j = i + 1; j < path.tour.size(); ++j) {
@@ -125,23 +142,25 @@ bool TInnerOperations::SwapAny(TPath& path, const TInputData& inputData, TInnerO
                 found = true;
                 best = {.i = i, .j = j, .distance = distance, .time = time, .score = score};
                 initial_score = score;
+
+                if (context.takeFirstImprove) {
+                    return apply_best(best);
+                }
             }
         }
     }
 
     if (found) {
-        std::swap(path.tour[best.i], path.tour[best.j]);
-        path.distance = best.distance;
-        path.time = best.time;
-        path.score = best.score;
+        return apply_best(best);
     }
-    return found;
+    return false;
 }
 
-// делает циклический свдиг подотрезка
-bool TInnerOperations::Shift(TPath& path, const TInputData& inputData, TInnerOperationContext&) {
-
+bool TInnerOperations::Shift(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
     auto initial_score = path.score;
+    if (path.tour.size() < 2) {
+        return false;
+    }
 
     struct best_operation {
         size_t from;
@@ -163,6 +182,16 @@ bool TInnerOperations::Shift(TPath& path, const TInputData& inputData, TInnerOpe
         return path.tour[original_pos];
     };
 
+    const auto apply_best = [&](const best_operation& b) -> bool {
+        const auto vertex = path.tour[b.from];
+        path.tour.erase(path.tour.begin() + b.from);
+        path.tour.insert(path.tour.begin() + b.to, vertex);
+        path.distance = b.distance;
+        path.time = b.time;
+        path.score = b.score;
+        return true;
+    };
+
     for (size_t from = 0; from < path.tour.size(); ++from) {
         for (size_t to = 0; to < path.tour.size(); ++to) {
             if (from == to) continue;
@@ -170,27 +199,26 @@ bool TInnerOperations::Shift(TPath& path, const TInputData& inputData, TInnerOpe
             auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size(),
                 [&](size_t pos) { return get_shifted(from, to, pos); });
 
-            if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
+            if (initial_score < score && time <= path.max_time && distance <= path.max_distance) {
                 found = true;
                 best = {.from = from, .to = to, .distance = distance, .time = time, .score = score};
                 initial_score = score;
+
+                if (context.takeFirstImprove) {
+                    return apply_best(best);
+                }
             }
         }
     }
 
     if (found) {
-        const auto vertex = path.tour[best.from];
-        path.tour.erase(path.tour.begin() + best.from);
-        path.tour.insert(path.tour.begin() + best.to, vertex);
-        path.distance = best.distance;
-        path.time = best.time;
-        path.score = best.score;
+        return apply_best(best);
     }
-    return found;
+    return false;
 }
 
 // разворачивает сегмент [i..j]
-bool TInnerOperations::TwoOpt(TPath& path, const TInputData& inputData, TInnerOperationContext&) {
+bool TInnerOperations::TwoOpt(TPath& path, const TInputData& inputData, TInnerOperationContext& context) {
     auto initial_score = path.score;
 
     struct best_operation {
@@ -203,6 +231,14 @@ bool TInnerOperations::TwoOpt(TPath& path, const TInputData& inputData, TInnerOp
 
     bool found = false;
     best_operation best{};
+
+    const auto apply_best = [&](const best_operation& b) -> bool {
+        std::reverse(path.tour.begin() + b.i, path.tour.begin() + b.j + 1);
+        path.distance = b.distance;
+        path.time = b.time;
+        path.score = b.score;
+        return true;
+    };
 
     for (size_t i = 0; i + 1 < path.tour.size(); ++i) {
         for (size_t j = i + 1; j + 1 < path.tour.size(); ++j) {
@@ -217,17 +253,18 @@ bool TInnerOperations::TwoOpt(TPath& path, const TInputData& inputData, TInnerOp
                 found = true;
                 best = {.i = i, .j = j, .distance = distance, .time = time, .score = score};
                 initial_score = score;
+
+                if (context.takeFirstImprove) {
+                    return apply_best(best);
+                }
             }
         }
     }
 
     if (found) {
-        std::reverse(path.tour.begin() + best.i, path.tour.begin() + best.j + 1);
-        path.distance = best.distance;
-        path.time = best.time;
-        path.score = best.score;
+        return apply_best(best);
     }
-    return found;
+    return false;
 }
 
 // перемещает сегмент длины seg_len на новую позицию
@@ -253,6 +290,19 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
     bool found = false;
     best_operation best{};
 
+    const auto apply_best = [&](const best_operation& b) -> bool {
+        std::vector<TRoute::value_type> segment(path.tour.begin() + b.from, path.tour.begin() + b.from + seg_len);
+        if (b.reversed) {
+            std::reverse(segment.begin(), segment.end());
+        }
+        path.tour.erase(path.tour.begin() + b.from, path.tour.begin() + b.from + seg_len);
+        path.tour.insert(path.tour.begin() + b.to, segment.begin(), segment.end());
+        path.distance = b.distance;
+        path.time = b.time;
+        path.score = b.score;
+        return true;
+    };
+
     for (size_t from = 0; from + seg_len <= path.tour.size(); ++from) {
         for (size_t to = 0; to + seg_len <= path.tour.size(); ++to) {
             if (to == from) continue;
@@ -275,24 +325,19 @@ bool TInnerOperations::OrOpt(TPath& path, const TInputData& inputData, TInnerOpe
                 if (score > initial_score && time <= path.max_time && distance <= path.max_distance) {
                     found = true;
                     best = {.from = from, .to = to, .distance = distance, .time = time, .score = score, .reversed = reversed};
-                    initial_score = score;
+
+                    if (context.takeFirstImprove) {
+                        return apply_best(best);
+                    }
                 }
             }
         }
     }
 
     if (found) {
-        std::vector<TRoute::value_type> segment(path.tour.begin() + best.from, path.tour.begin() + best.from + seg_len);
-        if (best.reversed) {
-            std::reverse(segment.begin(), segment.end());
-        }
-        path.tour.erase(path.tour.begin() + best.from, path.tour.begin() + best.from + seg_len);
-        path.tour.insert(path.tour.begin() + best.to, segment.begin(), segment.end());
-        path.distance = best.distance;
-        path.time = best.time;
-        path.score = best.score;
+        return apply_best(best);
     }
-    return found;
+    return false;
 }
 
 // пытается добавить еще непосещенную вершину в путь
@@ -313,7 +358,28 @@ bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, T
     bool found = false;
     best_operation best{};
 
-    for (auto candidate : candidates_list) {
+    const auto apply_best = [&](const best_operation& b) -> bool {
+        if (inputData.visited_points.find(b.vertex) != inputData.visited_points.end()) {
+            std::cout << "Error PickUnvisited: vertex " << b.vertex << " already visited for agent #" << path.agent_idx << "\n";
+            return false;
+        }
+        const auto it = std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), b.vertex);
+        if (it == inputData.unvisited_points.end()) {
+            std::cout << "Error: want delete already visited point: " << b.vertex << " for agent #" << path.agent_idx << "\n";
+            return false;
+        }
+
+        path.tour.insert(path.tour.begin() + b.to, b.vertex);
+        path.distance = b.distance;
+        path.time = b.time;
+        path.score = b.score;
+
+        inputData.visited_points.insert(b.vertex);
+        inputData.unvisited_points.erase(it);
+        return true;
+    };
+
+    for (const auto candidate : candidates_list) {
         for (size_t to = 0; to <= path.tour.size(); ++to) {
             auto [distance, time, score] = inputData.EvalVirtualTour(path, path.tour.size() + 1,
                 [&](size_t pos) -> points_type {
@@ -325,25 +391,18 @@ bool TInnerOperations::PickUnvisited(TPath& path, const TInputData& inputData, T
                 found = true;
                 best = {.vertex = candidate, .to = to, .distance = distance, .time = time, .score = score};
                 initial_score = score;
+
+                if (context.takeFirstImprove) {
+                    return apply_best(best);
+                }
             }
         }
     }
 
     if (found) {
-        path.tour.insert(path.tour.begin() + best.to, best.vertex);
-        path.distance = best.distance;
-        path.time = best.time;
-        path.score = best.score;
-
-        inputData.visited_points.insert(best.vertex);
-        const auto& it = std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), best.vertex);
-        if (it != inputData.unvisited_points.end()) [[likely]] {
-            inputData.unvisited_points.erase(it);
-        } else {
-            std::cout << "Error: want delete already visited point: " << best.vertex << " for agent #" << path.agent_idx << "\n";
-        }
+        return apply_best(best);
     }
-    return found;
+    return false;
 }
 
 // пытаемся удалить вершину из пути
@@ -357,6 +416,29 @@ bool TInnerOperations::Drop(TPath& path, const TInputData& inputData, TInnerOper
     struct best_operation {size_t idx; int64_t distance, time, score; };
     bool found = false;
     best_operation best{};
+
+    const auto apply_best = [&](const best_operation& b) -> bool {
+        const auto elem = path.tour[b.idx];
+
+        if (std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), elem) !=
+            inputData.unvisited_points.end()) {
+            std::cout << "Error: want to add already unvisited point: " << elem << " for agent #" << path.agent_idx << "\n";
+            return false;
+        }
+        if (inputData.visited_points.find(elem) == inputData.visited_points.end()) {
+            std::cout << "Error Drop: vertex " << elem << " not in visited_points for agent #" << path.agent_idx << "\n";
+            return false;
+        }
+
+        path.tour.erase(path.tour.begin() + b.idx);
+        path.distance = b.distance;
+        path.time = b.time;
+        path.score = b.score;
+
+        inputData.unvisited_points.emplace_back(elem);
+        inputData.visited_points.erase(elem);
+        return true;
+    };
 
     for (size_t i = 0; i < path.tour.size(); ++i) {
 
@@ -373,25 +455,18 @@ bool TInnerOperations::Drop(TPath& path, const TInputData& inputData, TInnerOper
             found = true;
             initial_score = score;
             best = {.idx = i, .distance = distance, .time = time, .score = score};
+
+            if (context.takeFirstImprove) {
+                return apply_best(best);
+            }
         }
                 
     }
 
     if (found) {
-        auto elem = path.tour[best.idx];
-        path.tour.erase(path.tour.begin() + best.idx);
-        path.distance = best.distance;
-        path.time = best.time;
-        path.score = best.score;
-
-        if (std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), elem) == inputData.unvisited_points.end()) {
-            inputData.unvisited_points.emplace_back(elem);
-        } else {
-            std::cout << "Error: want to add already unvisited point: " << elem << " for agent #" << path.agent_idx << "\n";
-        }
-        inputData.visited_points.erase(elem);
+        return apply_best(best);
     }
-    return found;
+    return false;
 }
 
 // заменить вершину из пути на непосещенную
@@ -413,6 +488,49 @@ bool TInnerOperations::Replace(TPath& path, const TInputData& inputData, TInnerO
     best_operation best{};
 
     auto candidates = ChooseUnvisitedVertexes(inputData, std::max(context.unvisiedCandidatesCount, 1ul));
+
+    const auto apply_best = [&](const best_operation& b) -> bool {
+        const auto removed_vertex = path.tour[b.remove_idx];
+
+        if (inputData.visited_points.find(removed_vertex) == inputData.visited_points.end()) {
+            std::cout << "Error Replace: removed_vertex " << removed_vertex << " not in visited_points for agent #" << path.agent_idx
+                      << "\n";
+            return false;
+        }
+        if (inputData.visited_points.find(b.insert_vertex) != inputData.visited_points.end()) {
+            std::cout << "Error Replace: insert_vertex " << b.insert_vertex << " already visited for agent #" << path.agent_idx
+                      << "\n";
+            return false;
+        }
+
+        const auto it_added = std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), b.insert_vertex);
+        if (it_added == inputData.unvisited_points.end()) {
+            std::cout << "Error Replace: insert_vertex:" << b.insert_vertex << " not in unvisited for agent #" << path.agent_idx
+                      << std::endl;
+            return false;
+        }
+
+        const auto it_removed = std::find(inputData.unvisited_points.begin(), inputData.unvisited_points.end(), removed_vertex);
+        if (it_removed != inputData.unvisited_points.end()) {
+            std::cout << "Error Replace: removed_vertex: " << removed_vertex << " already in unvisited for agent #" << path.agent_idx
+                      << std::endl;
+            return false;
+        }
+
+        path.tour.erase(path.tour.begin() + b.remove_idx);
+        path.tour.insert(path.tour.begin() + b.insert_pos, b.insert_vertex);
+
+        path.distance = b.distance;
+        path.time = b.time;
+        path.score = b.score;
+
+        inputData.visited_points.erase(removed_vertex);
+        inputData.visited_points.insert(b.insert_vertex);
+
+        inputData.unvisited_points.erase(it_added);
+        inputData.unvisited_points.push_back(removed_vertex);
+        return true;
+    };
 
     for (size_t remove_idx = 0; remove_idx < path.tour.size(); ++remove_idx) {
         for (auto candidate : candidates) {
@@ -446,41 +564,19 @@ bool TInnerOperations::Replace(TPath& path, const TInputData& inputData, TInnerO
                         .score = score
                     };
                     initial_score = score;
+
+                    if (context.takeFirstImprove) {
+                        return apply_best(best);
+                    }
                 }
             }
         }
     }
 
     if (found) {
-        const auto removed_vertex = path.tour[best.remove_idx];
-
-        path.tour.erase(path.tour.begin() + best.remove_idx);
-        path.tour.insert(path.tour.begin() + best.insert_pos, best.insert_vertex);
-
-        path.distance = best.distance;
-        path.time = best.time;
-        path.score = best.score;
-
-        inputData.visited_points.erase(removed_vertex);
-        inputData.visited_points.insert(best.insert_vertex);
-
-        auto it_added= std::find(inputData.unvisited_points.begin(),
-                                 inputData.unvisited_points.end(), best.insert_vertex);
-        if (it_added != inputData.unvisited_points.end()) {
-            inputData.unvisited_points.erase(it_added);
-        } else {
-            std::cout << "Error Replace: insert_vertex:" <<  best.insert_vertex << " not in unvisited for agent #"  << path.agent_idx << std::endl;
-        }
-
-        auto it_removed = std::find(inputData.unvisited_points.begin(),
-                                    inputData.unvisited_points.end(), removed_vertex);
-        if (it_removed == inputData.unvisited_points.end()) {
-            inputData.unvisited_points.push_back(removed_vertex);
-        } else {
-            std::cout << "Error Replace: removed_vertex: " << removed_vertex << " already in unvisited for agent #" << path.agent_idx << std::endl;
-        }
+        return apply_best(best);
     }
-    return found;
+    return false;
 }
 
 // Источник: Vansteenwegen et al. (2009) «ILS for TOPTW» (Computers & OR)
@@ -510,7 +606,7 @@ bool TInnerOperations::DoubleBridge(TPath& path, const TInputData& inputData, TI
     if (cut2 > cut3) {
         std::swap(cut2, cut3);
     }
-    if (cut1 > cut2){ 
+    if (cut1 > cut2) { 
         std::swap(cut1, cut2);
     }
 

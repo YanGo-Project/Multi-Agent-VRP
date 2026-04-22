@@ -3,15 +3,48 @@
 #include "../include/inter_operation.hpp"
 
 #include <algorithm>
+#include <chrono>
+#include <iostream>
+#include <mutex>
+#include <optional>
 #include <random>
 #include <thread>
 #include <vector>
-#include <mutex>
-#include <iostream>
 
 namespace {
 std::mutex unvisited_mutex;
+
+void RunGlueWarmup(
+    std::vector<TPath>& paths,
+    const TInputData& inputData,
+    const OptimizationContext& context,
+    std::mt19937& rng
+) {
+    if (paths.size() < 2 || context.glue_warmup_attempts == 0) {
+        return;
+    }
+    TInterOperations inter_ops;
+    const size_t inner_lim =  context.glue_max_inner_iterations;
+    TInterOperations::TInterOperationContext inter_ctx{
+        .max_glue_inner_optimization_iterations = inner_lim
+    };
+    std::uniform_int_distribution<size_t> dist(0, paths.size() - 1);
+    for (size_t k = 0; k < context.glue_warmup_attempts; ++k) {
+        size_t p1 = dist(rng);
+        size_t p2 = dist(rng);
+        while (p1 == p2) {
+            p2 = dist(rng);
+        }
+        inter_ops.DoOperation(
+            paths[p1],
+            paths[p2],
+            inputData,
+            TInterOperations::EInterOperation::Glue,
+            inter_ctx
+        );
+    }
 }
+} // namespace
 
 constexpr uint64_t kNeedUseMutex = 
     (uint64_t{1} << static_cast<uint8_t>(TInnerOperations::EInnerOperation::PickUnvisited)) |
@@ -23,7 +56,8 @@ bool DoInnerOptimization(
     TPath& path,
     const TInputData& inputData,
     const OptimizationContext& context,
-    TOperatorSelector& selector
+    TOperatorSelector& selector,
+    std::optional<std::chrono::steady_clock::time_point> deadline
 ) {
     size_t no_improve = 0;
     bool any_improved = false;
@@ -34,6 +68,9 @@ bool DoInnerOptimization(
     const size_t unvisited_candidates = std::max(context.unvisited_candidates, 1ul);
 
     while (no_improve < context.inner_iterations_without_improve) {
+        if (deadline && std::chrono::steady_clock::now() >= *deadline) {
+            break;
+        }
 
         const size_t or_opt_size = std::min(no_improve + 2, context.max_or_opt_size);
         TInnerOperations::TInnerOperationContext inner_operation_context{
@@ -82,12 +119,17 @@ bool DoInterOptimization(
     TPath& path2,
     const TInputData& inputData,
     TOperatorSelector& selector,
+    const OptimizationContext& context,
     std::mt19937& rng
 ) {
     TInterOperations inter_ops;
 
+    TInterOperations::TInterOperationContext inter_ctx {
+        .max_glue_inner_optimization_iterations = context.glue_max_inner_iterations
+    };
+
     TInterOperations::EInterOperation op = selector.SelectInterOp(rng);
-    bool improved = inter_ops.DoOperation(path1, path2, inputData, op);
+    bool improved = inter_ops.DoOperation(path1, path2, inputData, op, inter_ctx);
 
     EOutcome outcome = improved ? EOutcome::Improved : EOutcome::NotImproved;
     selector.UpdateInterOp(op, outcome);
@@ -113,7 +155,18 @@ void Optimize(
 
     std::vector<uint8_t> inner_improved(paths.size(), 0);
 
+    RunGlueWarmup(paths, inputData, context, rng);
+
+    std::optional<std::chrono::steady_clock::time_point> deadline;
+    if (context.time_limit_seconds > 0) {
+        deadline = std::chrono::steady_clock::now() + std::chrono::seconds(context.time_limit_seconds);
+    }
+
     while (no_improve < context.inter_iterations_without_improve) {
+        if (deadline && std::chrono::steady_clock::now() >= *deadline) {
+            std::cout << "Optimize: main loop stopped by time limit (" << context.time_limit_seconds << " s)\n";
+            break;
+        }
 
         {
             std::vector<std::thread> threads;
@@ -121,15 +174,20 @@ void Optimize(
 
             for (size_t i = 0; i < paths.size(); ++i) {
                 threads.emplace_back(
-                    [&paths, &inputData, &context, &inner_improved, &selector, i]
+                    [&paths, &inputData, &context, &inner_improved, &selector, deadline, i]
                 {
-                    inner_improved[i] = DoInnerOptimization(paths[i], inputData, context, selector) ? 1u : 0u;
+                    inner_improved[i] = DoInnerOptimization(paths[i], inputData, context, selector, deadline) ? 1u : 0u;
                 });
             }
 
             for (auto& t : threads) {
                 t.join();
             }
+        }
+
+        if (deadline && std::chrono::steady_clock::now() >= *deadline) {
+            std::cout << "Optimize: main loop stopped by time limit (" << context.time_limit_seconds << " s)\n";
+            break;
         }
 
         bool inter_ok = false;
@@ -140,7 +198,7 @@ void Optimize(
                 p2 = path_dist(rng);
             }
 
-            inter_ok = DoInterOptimization(paths[p1], paths[p2], inputData,selector, rng);
+            inter_ok = DoInterOptimization(paths[p1], paths[p2], inputData,selector, context, rng);
         }
 
         const bool any_inner_ok = std::any_of(

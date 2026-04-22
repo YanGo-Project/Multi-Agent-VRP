@@ -19,16 +19,20 @@ public:
 
     static constexpr int kInterOperationsCount = static_cast<uint8_t>(EInterOperation::Last);
 
+    struct TInterOperationContext {
+        size_t max_glue_inner_optimization_iterations = 10;
+    };
+
     bool DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
-                     EInterOperation operation);
+                     EInterOperation operation, TInterOperationContext& ctx);
 
 private:
-    using TOperationFn = bool (TInterOperations::*)(TPath&, TPath&, const TInputData&);
+    using TOperationFn = bool (TInterOperations::*)(TPath&, TPath&, const TInputData&, TInterOperationContext&);
 
-    bool Relocate(TPath& path1, TPath& path2, const TInputData& inputData);
-    bool Swap(TPath& path1, TPath& path2, const TInputData& inputData);
-    bool TwoOpt(TPath& path1, TPath& path2, const TInputData& inputData);
-    bool Cross(TPath& path1, TPath& path2, const TInputData& inputData);
-    bool RelocateSegment(TPath& path1, TPath& path2, const TInputData& inputData);
-    bool Glue(TPath& path1, TPath& path2, const TInputData& inputData);
+    bool Relocate(TPath& path1, TPath& path2, const TInputData& inputData, TInterOperationContext& ctx);
+    bool Swap(TPath& path1, TPath& path2, const TInputData& inputData, TInterOperationContext& ctx);
+    bool TwoOpt(TPath& path1, TPath& path2, const TInputData& inputData, TInterOperationContext& ctx);
+    bool Cross(TPath& path1, TPath& path2, const TInputData& inputData, TInterOperationContext& ctx);
+    bool RelocateSegment(TPath& path1, TPath& path2, const TInputData& inputData, TInterOperationContext& ctx);
+    bool Glue(TPath& path1, TPath& path2, const TInputData& inputData, TInterOperationContext& ctx);
 };

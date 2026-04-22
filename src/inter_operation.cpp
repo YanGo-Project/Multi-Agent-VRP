@@ -15,14 +15,14 @@ namespace {
 } // namespace
 
 bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
-                                   EInterOperation operation) {
+                                   EInterOperation operation, TInterOperationContext& ctx) {
     static constexpr TOperationFn kOperations[] = {
         &TInterOperations::Relocate,        // 0
         &TInterOperations::Swap,            // 1
         &TInterOperations::TwoOpt,          // 2
         &TInterOperations::Cross,           // 3
         &TInterOperations::RelocateSegment, // 4
-        &TInterOperations::Glue,             // 5
+        &TInterOperations::Glue,            // 5
     };
 
     const uint8_t idx = static_cast<uint8_t>(operation);
@@ -31,7 +31,7 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
         return false;
     }
 
-    auto answer = (this->*kOperations[idx])(path1, path2, inputData);
+    auto answer = (this->*kOperations[idx])(path1, path2, inputData, ctx);
 
     inputData.check_path_values(path1);
     inputData.check_path_values(path2);
@@ -39,7 +39,7 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
 }
 
 // переместить одну вершину пути в другой путь
-bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     // в случае если один из путей не имеет минимального числа вершин, то отдаем его добору приоритет над целевой функцией
@@ -132,7 +132,7 @@ bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &in
 }
 
 // обмен двух вершин между путями
-bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     struct best_operation {
@@ -199,7 +199,7 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
 }
 
 // обмениваем "хвосты" у двух маршрутов
-bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     struct best_operation {
@@ -289,7 +289,7 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
 }
 
 // обмениваем у двух маршрутов отрезок
-bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     // длина отрезка ограничена четвертью минимального из двух маршрутов
@@ -375,7 +375,7 @@ bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &input
 }
 
 // обмениваем отрезок между отрезками
-bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     struct best_operation {
@@ -475,23 +475,26 @@ bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputD
     return found;
 }
 
-// Склейка туров, локальная перестановка без смены множества вершин, затем лучший разрез по ДП/перебору
-// с возвратом к исходным депо агентов. Внутренняя фаза использует depo первого маршрута как опорную точку
-// для EvalVirtualTour; финальная оценка разреза — с реальными depo и лимитами каждого агента.
-bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputData) {
+// cклейка и разрез двух маршрутов
+bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext& ctx) {
     int64_t initial_score = path1.score + path2.score;
     if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
         initial_score = std::numeric_limits<int64_t>::min();
+    }
+
+    const size_t combined_size = path1.tour.size() + path2.tour.size();
+    if (combined_size == 0) {
+        return false;
+    }
+
+    if (combined_size < path1.min_vertexes + path2.min_vertexes) {
+        return false;
     }
 
     TRoute combined;
     combined.reserve(path1.tour.size() + path2.tour.size());
     combined.insert(combined.end(), path1.tour.begin(), path1.tour.end());
     combined.insert(combined.end(), path2.tour.begin(), path2.tour.end());
-    const size_t combined_size = combined.size();
-    if (combined_size == 0) {
-        return false;
-    }
 
     TPath temp;
     temp.tour = std::move(combined);
@@ -507,15 +510,12 @@ bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputD
 
     OptimizationContext inner_ctx;
     inner_ctx.inner_preserve_vertex_set = true;
-    inner_ctx.inner_iterations_without_improve = 200;
+    inner_ctx.inner_iterations_without_improve = ctx.max_glue_inner_optimization_iterations;
+    inner_ctx.take_first_improve = false;
 
     TOperatorSelector selector;
     selector.Init(inputData.agents_count);
     DoInnerOptimization(temp, inputData, inner_ctx, selector);
-
-    if (path1.max_vertexes > combined_size || path2.max_vertexes > combined_size) {
-        return false;
-    }
 
     const size_t min_split = path1.min_vertexes;
     const size_t max_split = std::min<size_t>(path1.max_vertexes, combined_size - path2.min_vertexes);

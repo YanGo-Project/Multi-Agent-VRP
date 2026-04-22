@@ -1,15 +1,35 @@
 #include "../include/first_step.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
 #include <limits>
-#include <bitset>
+#include <vector>
 
 constexpr size_t TOP_SOLUTIONS_COUNT = 7;
 
 namespace {
     using score_type = FirstStepAnswer::score_type;
     using points_type = FirstStepAnswer::points_type;
+
+    inline size_t VertexMaskWords(points_type points_count) {
+        return (static_cast<size_t>(points_count) + 63u) / 64u;
+    }
+
+    inline void VertexMaskAdd(std::vector<uint64_t>& mask, points_type v) {
+        const unsigned bi = static_cast<unsigned>(v);
+        const size_t wi = static_cast<size_t>(bi) >> 6;
+        mask[wi] |= (1ULL << (bi & 63));
+    }
+
+    inline bool VertexMaskHas(const std::vector<uint64_t>& mask, points_type v) {
+        const unsigned bi = static_cast<unsigned>(v);
+        const size_t wi = static_cast<size_t>(bi) >> 6;
+        if (wi >= mask.size()) {
+            return false;
+        }
+        return (mask[wi] >> (bi & 63)) & 1ULL;
+    }
 
     struct Candidate {
         // информация о метриках
@@ -25,43 +45,12 @@ namespace {
         size_t candidate_idx;
         points_type last_vertex;
 
-        std::set<points_type> GetPathSet(const std::vector<std::vector<std::vector<Candidate>>>& dp) const {
-
-            std::set<points_type> pathSet;
-
-            auto next_load = load;
-            auto next_vertex = last_vertex;
-            auto next_candidate_idx = candidate_idx;
-
-            while (next_load > 0) {
-
-                if (next_vertex != depo) {
-                    pathSet.insert(next_vertex);
-                }
-
-                const auto& cand = dp[next_load][next_vertex][next_candidate_idx];
-
-                next_load -= 1;
-                next_vertex = cand.last_vertex;
-                next_candidate_idx = cand.candidate_idx;
-            }
-            return pathSet;
-        }
-
-        inline bool IsVertexInPath(const std::vector<std::vector<std::vector<Candidate>>>& dp, const points_type vertex) const {
-
-            auto pathSet = GetPathSet(dp);
-
-            return pathSet.find(vertex) != pathSet.end();
-        }
-
-        inline bool IsSamePathSet(const std::vector<std::vector<std::vector<Candidate>>>& dp, const Candidate& other) const {
-            return GetPathSet(dp) == other.GetPathSet(dp);
-        }
+        /// Множество клиентских вершин на пути (депо не кодируем — как в прежнем GetPathSet).
+        std::vector<uint64_t> vertex_mask;
 
         FirstStepAnswer CreateAnswer(const std::vector<std::vector<std::vector<Candidate>>>& dp) const {
             FirstStepAnswer answer;
-            answer.vertexes.reserve(load);
+            answer.vertexes.reserve(static_cast<size_t>(std::max<int64_t>(0, load + 1)));
             answer.value = value;
             answer.time = time;
             answer.distance = distance;
@@ -84,7 +73,7 @@ namespace {
 
             std::reverse(answer.vertexes.begin(), answer.vertexes.end());
 
-            return answer; // RVO 
+            return answer;
         }
     };
 
@@ -95,16 +84,11 @@ namespace {
 
         return value > candidates.back().value;
     }
-    
-    inline void InsertTopCandidate(
-        const std::vector<std::vector<std::vector<Candidate>>>& dp,
-        std::vector<Candidate>& candidates, 
-        Candidate&& newCandidate
-    ) {
 
+    inline void InsertTopCandidate(std::vector<Candidate>& candidates, Candidate&& newCandidate) {
         bool duplicated = false;
         for (auto& existed_candidate : candidates) {
-            if (existed_candidate.IsSamePathSet(dp, newCandidate)) {
+            if (existed_candidate.vertex_mask == newCandidate.vertex_mask) {
                 if (existed_candidate.value < newCandidate.value) {
                     std::swap(existed_candidate, newCandidate);
                 } else {
@@ -120,7 +104,7 @@ namespace {
             candidates.emplace_back(std::move(newCandidate));
         }
 
-        std::sort(candidates.begin(), candidates.end(), 
+        std::sort(candidates.begin(), candidates.end(),
             [](const auto& first, const auto& second) {
                 return first.value > second.value;
             }
@@ -146,6 +130,8 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
     auto min_load = input.min_load[agent];
     auto points_count = input.points_count;
 
+    const size_t mask_words = std::max<size_t>(VertexMaskWords(points_count), size_t{1});
+
     // dp теперь хранит векторы сжатых представлений решений для каждого состояния
     std::vector<std::vector<std::vector<Candidate>>> dp(
         max_load + 2,
@@ -160,9 +146,10 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
         .value = 0,
         .time = 0,
         .distance = 0,
-        .load = -1,
         .depo = agent_depo,
+        .load = -1,
     };
+    initial.vertex_mask.assign(mask_words, 0);
     dp[0][agent_depo].push_back(std::move(initial));
 
 
@@ -207,7 +194,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
                         // 3. вершина to_vertex еще не была в пути
                         // 4. вершина to_vertex еше не была посещена в пути другого агента
                         if (prev_solution.value != FirstStepAnswer::default_value &&
-                            !prev_solution.IsVertexInPath(dp, to_vertex) &&
+                            !VertexMaskHas(prev_solution.vertex_mask, to_vertex) &&
                             input.visited_points.find(to_vertex) == input.visited_points.end()
                         ) [[likely]] {
 
@@ -224,22 +211,23 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
 
                             // проверки найденного пути на целевую функцию, максимальное время пути и максимальную дистанцию
                             if (new_point_time <= max_time &&
-                                new_point_dist <= max_dist && 
+                                new_point_dist <= max_dist &&
                                 IsCandidateGood(candidates, new_point_score)
                             ) {
-                                InsertTopCandidate(
-                                    dp,
-                                    candidates,
-                                    Candidate {
-                                        .value = new_point_score,
-                                        .time = new_point_time,
-                                        .distance = new_point_dist,
-                                        .load = cur_load,
-                                        .candidate_idx = candidate_idx,
-                                        .last_vertex = last_vertex,
-                                        .depo = agent_depo,
-                                    }
-                                );
+                                Candidate new_cand{
+                                    .value = new_point_score,
+                                    .time = new_point_time,
+                                    .distance = new_point_dist,
+                                    .depo = agent_depo,
+                                    .load = cur_load,
+                                    .candidate_idx = candidate_idx,
+                                    .last_vertex = last_vertex,
+                                    .vertex_mask = prev_solution.vertex_mask,
+                                };
+                                if (to_vertex != agent_depo) {
+                                    VertexMaskAdd(new_cand.vertex_mask, to_vertex);
+                                }
+                                InsertTopCandidate(candidates, std::move(new_cand));
                             }
                         }
                     }
@@ -265,7 +253,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
     for (points_type cur_load = min_load + 1; cur_load <= max_load + 1; ++cur_load) {
         for (auto& candidate : dp[cur_load][agent_depo]) {
             if (IsCandidateGood(answer_candidates, candidate.value)) {
-                InsertTopCandidate(dp, answer_candidates, std::move(candidate));
+                InsertTopCandidate(answer_candidates, std::move(candidate));
             }
         }
     }
