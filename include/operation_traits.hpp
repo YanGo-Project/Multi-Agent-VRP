@@ -38,6 +38,7 @@ struct TOperationTraits<TInterOperations::EInterOperation> {
         "TwoOpt",
         "Cross",
         "RelocateSegment",
+        "Glue",
     };
 
     static std::string_view Name(TEnum op) {

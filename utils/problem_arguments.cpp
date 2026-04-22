@@ -9,6 +9,7 @@
 bool ParseProgramArguments(int argc, char *argv[], ProgramArguments &args) {
     int opt;
     args.save_csv = false;
+    args.time = 0;
     
     // Значения по умолчанию для мета-параметров
     args.meta.population_size = 20;

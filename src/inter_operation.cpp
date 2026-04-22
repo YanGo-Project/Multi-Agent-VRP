@@ -1,8 +1,11 @@
 #include "../include/inter_operation.hpp"
+#include "../include/algorithm.hpp"
+#include "../include/operator_selector.hpp"
 #include "../utils/problem_arguments_impl.hpp"
 
 #include <algorithm>
 #include <cassert>
+#include <limits>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -12,13 +15,14 @@ namespace {
 } // namespace
 
 bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
-                                   EInterOperation operation) {
+                                   EInterOperation operation, TInterOperationContext& ctx) {
     static constexpr TOperationFn kOperations[] = {
         &TInterOperations::Relocate,        // 0
         &TInterOperations::Swap,            // 1
         &TInterOperations::TwoOpt,          // 2
         &TInterOperations::Cross,           // 3
-        &TInterOperations::RelocateSegment  // 4
+        &TInterOperations::RelocateSegment, // 4
+        &TInterOperations::Glue,            // 5
     };
 
     const uint8_t idx = static_cast<uint8_t>(operation);
@@ -27,7 +31,7 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
         return false;
     }
 
-    auto answer = (this->*kOperations[idx])(path1, path2, inputData);
+    auto answer = (this->*kOperations[idx])(path1, path2, inputData, ctx);
 
     inputData.check_path_values(path1);
     inputData.check_path_values(path2);
@@ -35,7 +39,7 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
 }
 
 // переместить одну вершину пути в другой путь
-bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     // в случае если один из путей не имеет минимального числа вершин, то отдаем его добору приоритет над целевой функцией
@@ -128,7 +132,7 @@ bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &in
 }
 
 // обмен двух вершин между путями
-bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     struct best_operation {
@@ -195,7 +199,7 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
 }
 
 // обмениваем "хвосты" у двух маршрутов
-bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     struct best_operation {
@@ -285,7 +289,7 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
 }
 
 // обмениваем у двух маршрутов отрезок
-bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     // длина отрезка ограничена четвертью минимального из двух маршрутов
@@ -371,7 +375,7 @@ bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &input
 }
 
 // обмениваем отрезок между отрезками
-bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputData &inputData) {
+bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
 
     struct best_operation {
@@ -469,4 +473,113 @@ bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputD
     }
 
     return found;
+}
+
+// cклейка и разрез двух маршрутов
+bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext& ctx) {
+    int64_t initial_score = path1.score + path2.score;
+    if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
+        initial_score = std::numeric_limits<int64_t>::min();
+    }
+
+    const size_t combined_size = path1.tour.size() + path2.tour.size();
+    if (combined_size == 0) {
+        return false;
+    }
+
+    if (combined_size < path1.min_vertexes + path2.min_vertexes) {
+        return false;
+    }
+
+    TRoute combined;
+    combined.reserve(path1.tour.size() + path2.tour.size());
+    combined.insert(combined.end(), path1.tour.begin(), path1.tour.end());
+    combined.insert(combined.end(), path2.tour.begin(), path2.tour.end());
+
+    TPath temp;
+    temp.tour = std::move(combined);
+    temp.depo = path1.depo;
+    temp.agent_idx = path1.agent_idx;
+    temp.max_distance = std::numeric_limits<decltype(temp.max_distance)>::max();
+    temp.max_time = std::numeric_limits<decltype(temp.max_time)>::max();
+    temp.max_vertexes = static_cast<decltype(temp.max_vertexes)>(combined_size);
+    temp.min_vertexes = 0;
+    std::tie(temp.distance, temp.time, temp.score) = inputData.EvalVirtualTour(
+        temp, temp.tour.size(),
+        [&](size_t pos) -> points_type { return temp.tour[pos]; });
+
+    OptimizationContext inner_ctx;
+    inner_ctx.inner_preserve_vertex_set = true;
+    inner_ctx.inner_iterations_without_improve = ctx.max_glue_inner_optimization_iterations;
+    inner_ctx.take_first_improve = false;
+
+    TOperatorSelector selector;
+    selector.Init(inputData.agents_count);
+    DoInnerOptimization(temp, inputData, inner_ctx, selector);
+
+    const size_t min_split = path1.min_vertexes;
+    const size_t max_split = std::min<size_t>(path1.max_vertexes, combined_size - path2.min_vertexes);
+    if (min_split > max_split) {
+        return false;
+    }
+
+    struct best_operation {
+        size_t split;
+        int64_t first_time;
+        int64_t first_score;
+        int64_t first_distance;
+        int64_t second_time;
+        int64_t second_score;
+        int64_t second_distance;
+    };
+
+
+    bool found = false;
+    best_operation best_glue{};
+
+    for (size_t split = min_split; split <= max_split; ++split) {
+        const size_t second_size = combined_size - split;
+        if (second_size < path2.min_vertexes || second_size > path2.max_vertexes) {
+            continue;
+        }
+        auto [d1, t1, s1] = inputData.EvalVirtualTour(path1, split, [&](size_t pos) -> points_type {
+            return temp.tour[pos];
+        });
+        if (d1 > path1.max_distance || t1 > path1.max_time) {
+            continue;
+        }
+        auto [d2, t2, s2] = inputData.EvalVirtualTour(path2, second_size, [&](size_t pos) -> points_type {
+            return temp.tour[split + pos];
+        });
+        if (d2 > path2.max_distance || t2 > path2.max_time) {
+            continue;
+        }
+        if (s1 + s2 > initial_score) {
+            found = true;
+            best_glue = {
+                .split = split,
+                .first_time = t1,
+                .first_score = s1,
+                .first_distance = d1,
+                .second_time = t2,
+                .second_score = s2,
+                .second_distance = d2,
+            };
+            initial_score = s1 + s2;
+        }
+    }
+
+    if (!found) {
+        return false;
+    }
+
+    path1.tour.assign(temp.tour.begin(), temp.tour.begin() + best_glue.split);
+    path2.tour.assign(temp.tour.begin() + best_glue.split, temp.tour.end());
+    path1.distance = best_glue.first_distance;
+    path1.time = best_glue.first_time;
+    path1.score = best_glue.first_score;
+    path2.distance = best_glue.second_distance;
+    path2.time = best_glue.second_time;
+    path2.score = best_glue.second_score;
+    return true;
 }

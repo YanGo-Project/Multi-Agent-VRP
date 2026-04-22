@@ -4,7 +4,7 @@
 #include "../include/path.hpp"
 
 // get_vertex(i) -> points_type  — возвращает i-ю клиентскую вершину виртуального тура.
-// tour_size     — число клиентских вершин (для PickUnvisited = n+1, иначе = n).
+// tour_size —> число клиентских вершин.
 template<typename GetVertex>
 std::tuple<int64_t, int64_t, int64_t>
 TInputData::EvalVirtualTour(const TPath& path, size_t tour_size, GetVertex&& get_vertex) const {
