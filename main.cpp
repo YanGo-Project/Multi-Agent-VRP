@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     }
 
     const size_t max_inter = static_cast<size_t>(std::max(1, args.meta.max_iter_without_solution));
-    const size_t inner_stagn = std::clamp(size_t{10}, size_t{32}, size_t{240});
+    const size_t inner_stagn = std::clamp(max_inter, size_t{32}, size_t{240});
 
     OptimizationContext opt_ctx{
         .inner_iterations_without_improve = inner_stagn,

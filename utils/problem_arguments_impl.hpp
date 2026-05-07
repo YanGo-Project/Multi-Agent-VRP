@@ -8,10 +8,6 @@
 template<typename GetVertex>
 std::tuple<int64_t, int64_t, int64_t>
 TInputData::EvalVirtualTour(const TPath& path, size_t tour_size, GetVertex&& get_vertex) const {
-    if (tour_size == 0) {
-        return {0, 0, 0};
-    }
-
     int64_t distance = 0, time = 0, score = 0;
     const auto start_depo = path.start_depo;
     const auto end_depo = path.end_depo;

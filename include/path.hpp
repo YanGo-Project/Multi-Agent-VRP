@@ -24,6 +24,11 @@ struct TPath {
 
 
     bool operator==(const TPath &other) const {
+
+        if (start_depo != other.start_depo || end_depo != other.end_depo) {
+            return false;
+        }
+
         if (tour.size() != other.tour.size()) {
             return false;
         }
