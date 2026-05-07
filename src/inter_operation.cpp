@@ -41,7 +41,6 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
 // переместить одну вершину пути в другой путь
 bool TInterOperations::Relocate(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
-
     // в случае если один из путей не имеет минимального числа вершин, то отдаем его добору приоритет над целевой функцией
     if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
         initial_score = std::numeric_limits<decltype(initial_score)>::min();
@@ -201,6 +200,9 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
 // обмениваем "хвосты" у двух маршрутов
 bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
+    if (path1.tour.size < path1.min_vertexes || path2.tour.size < path2.min_vertexes) {
+        initial_score = std::numeric_limits<decltype(initial_score)>::min() + 1;
+    }
 
     struct best_operation {
         size_t split1;
@@ -377,6 +379,9 @@ bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &input
 // обмениваем отрезок между отрезками
 bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
+    if (path1.tour.size < path1.min_vertexes || path2.tour.size < path2.min_vertexes) {
+        initial_score = std::numeric_limits<decltype(initial_score)>::min() + 1;
+    }
 
     struct best_operation {
         bool from_first;
@@ -479,7 +484,7 @@ bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputD
 bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext& ctx) {
     int64_t initial_score = path1.score + path2.score;
     if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
-        initial_score = std::numeric_limits<int64_t>::min();
+        initial_score = std::numeric_limits<int64_t>::min() + 1;
     }
 
     const size_t combined_size = path1.tour.size() + path2.tour.size();
@@ -498,7 +503,8 @@ bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputD
 
     TPath temp;
     temp.tour = std::move(combined);
-    temp.depo = path1.depo;
+    temp.start_depo = path1.start_depo;
+    temp.end_depo = path1.end_depo;
     temp.agent_idx = path1.agent_idx;
     temp.max_distance = std::numeric_limits<decltype(temp.max_distance)>::max();
     temp.max_time = std::numeric_limits<decltype(temp.max_time)>::max();

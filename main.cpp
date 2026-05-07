@@ -9,7 +9,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <thread>
 #include <vector>
 #include <algorithm>
 #include <optional>
@@ -28,7 +27,8 @@ std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& f
                 .max_time     = input.max_time[agent],
                 .max_vertexes = input.max_load[agent],
                 .min_vertexes = input.min_load[agent],
-                .depo         = input.agent_depots[agent],
+                .start_depo   = input.agent_depots[agent],
+                .end_depo     = input.agent_depots_end[agent],
                 .agent_idx    = agent,
             }
         };
@@ -47,7 +47,8 @@ std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& f
             .max_time     = input.max_time[agent],
             .max_vertexes = input.max_load[agent],
             .min_vertexes = input.min_load[agent],
-            .depo         = input.agent_depots[agent],
+            .start_depo   = input.agent_depots[agent],
+            .end_depo     = input.agent_depots_end[agent],
             .agent_idx    = agent,
         });
     }
@@ -58,18 +59,7 @@ std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& f
 TPath ChooseBestCandidatePath(std::vector<FirstStepAnswer>&& candidates, TInputData& input, const OptimizationContext& ctx, uint32_t agent) {
     
     auto paths = ConstructPathsFromCandidates(std::move(candidates), input, agent);
-
-    std::vector<std::thread> threads;
-    threads.reserve(paths.size());
-    for (size_t i = 0; i < paths.size(); ++i) {
-        threads.emplace_back([&paths, &input, &ctx, i] {
-        //    DoInnerOptimization(paths[i], input, ctx); 
-        });
-    }
-
-    for (auto& t : threads) {
-        t.join();
-    }
+    (void)ctx;
 
     size_t bestPathIdx = 0;
     for (size_t i = 1; i < paths.size(); ++i) {
@@ -124,7 +114,7 @@ int main(int argc, char *argv[]) {
     }
 
     const size_t max_inter = static_cast<size_t>(std::max(1, args.meta.max_iter_without_solution));
-    const size_t inner_stagn = std::clamp(max_inter / 18, size_t{32}, size_t{240});
+    const size_t inner_stagn = std::clamp(size_t{10}, size_t{32}, size_t{240});
 
     OptimizationContext opt_ctx{
         .inner_iterations_without_improve = inner_stagn,

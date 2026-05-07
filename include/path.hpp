@@ -18,7 +18,8 @@ struct TPath {
     int64_t max_time{0};
     FirstStepAnswer::points_type max_vertexes{0};
     FirstStepAnswer::points_type min_vertexes{0};
-    FirstStepAnswer::points_type depo{0};
+    FirstStepAnswer::points_type start_depo{0};
+    FirstStepAnswer::points_type end_depo{0};
     uint32_t agent_idx{0};
 
 

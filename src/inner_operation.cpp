@@ -29,11 +29,11 @@ std::ostream& operator<<(std::ostream& os, const TPath& path) {
        << "\ttime=" << path.time
        << "\tdist=" << path.distance
        << "\tstops=" << path.tour.size() << "\n";
-    os << "\troute: 0";
+    os << "\troute: " << static_cast<int>(path.start_depo);
     for (auto v : path.tour) {
-        os << "," << v;
+        os << "," << static_cast<int>(v);
     }
-    os << ",0\n";
+    os << "," << static_cast<int>(path.end_depo) << "\n";
     return os;
 }
 
