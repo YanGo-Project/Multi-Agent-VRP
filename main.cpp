@@ -9,7 +9,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <thread>
 #include <vector>
 #include <algorithm>
 #include <optional>
@@ -28,7 +27,8 @@ std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& f
                 .max_time     = input.max_time[agent],
                 .max_vertexes = input.max_load[agent],
                 .min_vertexes = input.min_load[agent],
-                .depo         = input.agent_depots[agent],
+                .start_depo   = input.agent_depots[agent],
+                .end_depo     = input.agent_depots_end[agent],
                 .agent_idx    = agent,
             }
         };
@@ -47,7 +47,8 @@ std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& f
             .max_time     = input.max_time[agent],
             .max_vertexes = input.max_load[agent],
             .min_vertexes = input.min_load[agent],
-            .depo         = input.agent_depots[agent],
+            .start_depo   = input.agent_depots[agent],
+            .end_depo     = input.agent_depots_end[agent],
             .agent_idx    = agent,
         });
     }
@@ -58,18 +59,7 @@ std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& f
 TPath ChooseBestCandidatePath(std::vector<FirstStepAnswer>&& candidates, TInputData& input, const OptimizationContext& ctx, uint32_t agent) {
     
     auto paths = ConstructPathsFromCandidates(std::move(candidates), input, agent);
-
-    std::vector<std::thread> threads;
-    threads.reserve(paths.size());
-    for (size_t i = 0; i < paths.size(); ++i) {
-        threads.emplace_back([&paths, &input, &ctx, i] {
-        //    DoInnerOptimization(paths[i], input, ctx); 
-        });
-    }
-
-    for (auto& t : threads) {
-        t.join();
-    }
+    (void)ctx;
 
     size_t bestPathIdx = 0;
     for (size_t i = 1; i < paths.size(); ++i) {

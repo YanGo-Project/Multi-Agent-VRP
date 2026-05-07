@@ -123,6 +123,8 @@ void Optimize(
     selector.Init(paths.size(), selectorConfig);
 
     std::vector<uint8_t> inner_improved(paths.size(), 0);
+    std::vector<std::thread> threads;
+    threads.reserve(paths.size());
 
     std::optional<std::chrono::steady_clock::time_point> deadline;
     if (context.time_limit_seconds > 0) {
@@ -136,8 +138,6 @@ void Optimize(
         }
 
         {
-            std::vector<std::thread> threads;
-            threads.reserve(paths.size());
 
             for (size_t i = 0; i < paths.size(); ++i) {
                 threads.emplace_back(
@@ -150,6 +150,7 @@ void Optimize(
             for (auto& t : threads) {
                 t.join();
             }
+            threads.clear();
         }
 
         if (deadline && std::chrono::steady_clock::now() >= *deadline) {
@@ -165,7 +166,7 @@ void Optimize(
                 p2 = path_dist(rng);
             }
 
-            inter_ok = DoInterOptimization(paths[p1], paths[p2], inputData,selector, context, rng);
+            inter_ok = DoInterOptimization(paths[p1], paths[p2], inputData, selector, context, rng);
         }
 
         const bool any_inner_ok = std::any_of(

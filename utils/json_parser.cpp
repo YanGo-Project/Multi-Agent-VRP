@@ -17,11 +17,23 @@ namespace nlohmann {
         if (j.contains("depots")) {
             j.at("depots").get_to(t.agent_depots);
         } else {
-            // Default depots to 0 for each agent if the field is missing
             t.agent_depots = decltype(t.agent_depots)(t.agents_count, 0);
         }
 
+        if (j.contains("depots_end")) {
+            j.at("depots_end").get_to(t.agent_depots_end);
+        } else {
+            t.agent_depots_end.reserve(t.agent_depots.size());
+            for (auto depot : t.agent_depots) {
+                t.agent_depots_end.push_back(depot);
+            }
+        }
+
         for (auto depo : t.agent_depots) {
+            t.depots_set.insert(depo);
+        }
+
+        for (auto depo : t.agent_depots_end) {
             t.depots_set.insert(depo);
         }
 
@@ -116,11 +128,11 @@ namespace JsonParser {
 
             std::vector<int> vertexes;
             vertexes.reserve(p.tour.size() + 2);
-            vertexes.push_back(static_cast<int>(p.depo));
+            vertexes.push_back(static_cast<int>(p.start_depo));
             for (auto v : p.tour) {
                 vertexes.push_back(static_cast<int>(v));
             }
-            vertexes.push_back(static_cast<int>(p.depo));
+            vertexes.push_back(static_cast<int>(p.end_depo));
 
             agents.push_back(json{
                 {"index",    static_cast<int>(i)},

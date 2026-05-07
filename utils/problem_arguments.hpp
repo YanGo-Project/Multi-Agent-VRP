@@ -59,8 +59,10 @@ struct TInputData {
     /// массив времён на обслуживание каждой точки, кроме склада.
     /// Размерность массива @points_count
     std::vector<int64_t> point_service_times;
-    /// массив который указывает какая вершина является депо у агентов
+    /// массив который указывает какая вершина является начальным депо у агентов
     std::vector<points_type> agent_depots;
+    /// массив который указывает какая вершина является конечным депо у агентов
+    std::vector<points_type> agent_depots_end;
 
     /// 30 минут в секундах для TD цены перехода
     static constexpr int64_t time_duration = 30 * 60;

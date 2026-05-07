@@ -138,19 +138,21 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
         std::vector<std::vector<Candidate>>(points_count)
     );
 
-    // депо текущего агента
-    const auto agent_depo = input.agent_depots[agent];
+    // депо старта текущего агента
+    const auto agent_depo_start = input.agent_depots[agent];
+    // депо конца текущего агента
+    const auto agent_depo_end = input.agent_depots_end[agent];
 
     // инициализация начального состояния
     Candidate initial {
         .value = 0,
         .time = 0,
         .distance = 0,
-        .depo = agent_depo,
+        .depo = agent_depo_start,
         .load = -1,
     };
     initial.vertex_mask.assign(mask_words, 0);
-    dp[0][agent_depo].push_back(std::move(initial));
+    dp[0][agent_depo_start].push_back(std::move(initial));
 
 
     std::vector<Candidate> candidates;
@@ -164,8 +166,8 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
 
             candidates.clear();
 
-            // пропускаем все депо, если это не депо нашего агента
-            if (to_vertex != agent_depo && input.depots_set.find(to_vertex) != input.depots_set.end()) {
+            // пропускаем все депо, если это не депо конца нашего агента
+            if (to_vertex != agent_depo_end && input.depots_set.find(to_vertex) != input.depots_set.end()) {
                 continue;
             }
 
@@ -173,12 +175,12 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
             for (points_type last_vertex = 0; last_vertex < points_count; ++last_vertex) {
 
                 // пропускаем все депо, если это не депо нашего агента
-                if (last_vertex != agent_depo && input.depots_set.find(last_vertex) != input.depots_set.end()) {
+                if (last_vertex != agent_depo_start && input.depots_set.find(last_vertex) != input.depots_set.end()) {
                     continue;
                 }
 
                 // хотим искать пути из депо только если загрузка 0 (первое ребро в пути)
-                if (last_vertex == agent_depo && cur_load != 0) [[unlikely]] {
+                if (last_vertex == agent_depo_start && cur_load != 0) [[unlikely]] {
                     continue;
                 }
 
@@ -218,13 +220,13 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
                                     .value = new_point_score,
                                     .time = new_point_time,
                                     .distance = new_point_dist,
-                                    .depo = agent_depo,
+                                    .depo = agent_depo_start,
                                     .load = cur_load,
                                     .candidate_idx = candidate_idx,
                                     .last_vertex = last_vertex,
                                     .vertex_mask = prev_solution.vertex_mask,
                                 };
-                                if (to_vertex != agent_depo) {
+                                if (to_vertex != agent_depo_start &&  to_vertex != agent_depo_end) {
                                     VertexMaskAdd(new_cand.vertex_mask, to_vertex);
                                 }
                                 InsertTopCandidate(candidates, std::move(new_cand));
@@ -251,7 +253,7 @@ std::vector<FirstStepAnswer> DoFirstStep(const TInputData &input, const size_t a
     answer_candidates.reserve(TOP_SOLUTIONS_COUNT);
 
     for (points_type cur_load = min_load + 1; cur_load <= max_load + 1; ++cur_load) {
-        for (auto& candidate : dp[cur_load][agent_depo]) {
+        for (auto& candidate : dp[cur_load][agent_depo_end]) {
             if (IsCandidateGood(answer_candidates, candidate.value)) {
                 InsertTopCandidate(answer_candidates, std::move(candidate));
             }
