@@ -203,10 +203,6 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
 
 // обмениваем "хвосты" у двух маршрутов
 bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
-
-    if (path1.tour.size() < path1.min_vertexes && path2.tour.size() < path2.min_vertexes) {
-        return false;
-    }
     
     auto initial_score = path1.score + path2.score;
     if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
@@ -410,8 +406,7 @@ bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputD
 
     // src -> dst: пробуем переместить отрезок из src в dst и ищем лучший вариант
     auto try_relocate_direction = [&](TPath& src, TPath& dst, bool from_first) {
-        if ((NeedCheckMimimalVertexes(src) && src.tour.size() <= src.min_vertexes) || 
-            (NeedCheckMimimalVertexes(dst) && dst.tour.size() >= dst.max_vertexes)
+        if (src.tour.size() <= src.min_vertexes && dst.tour.size() >= dst.max_vertexes
         ) {
             return;
         }
@@ -546,7 +541,7 @@ bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputD
 
     for (size_t split = 1; split <= combined_size; ++split) {
 
-        if (NeedCheckMimimalVertexes(path1) && split < path1.min_vertexes || 
+        if ((NeedCheckMimimalVertexes(path1) && split < path1.min_vertexes) || 
             split > path1.max_vertexes
         ) {
             continue;
