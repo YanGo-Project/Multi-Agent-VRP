@@ -1,0 +1,13 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+Li/p0.1/Li_21_p0.1_.json,demand,-5000,15600,15600,561,10,50,62,10
+Li/p0.1/Li_22_p0.1_.json,demand,-2012,13432,13432,601,15,36,44,15
+Li/p0.1/Li_23_p0.1_.json,demand,-6564,18664,18664,641,10,57,71,10
+Li/p0.1/Li_24_p0.1_.json,demand,-8503,22103,22103,721,10,64,80,10
+Li/p0.1/Li_25_p0.1_.json,demand,-856,15496,15496,761,19,36,44,19
+Li/p0.1/Li_26_p0.1_.json,demand,-9466,24546,24546,801,10,72,88,10
+Li/p0.1/Li_27_p0.1_.json,demand,511,15549,15549,841,20,37,47,20
+Li/p0.1/Li_28_p0.1_.json,demand,-11399,27939,27939,881,10,79,97,10
+Li/p0.1/Li_29_p0.1_.json,demand,-12430,30600,30600,961,10,86,106,10
+Li/p0.1/Li_30_p0.1_.json,demand,-13041,32521,32521,1041,10,93,115,10
+Li/p0.1/Li_31_p0.1_.json,demand,-15035,36165,36165,1121,10,100,124,10
+Li/p0.1/Li_32_p0.1_.json,demand,-16843,39653,39653,1201,11,98,121,11

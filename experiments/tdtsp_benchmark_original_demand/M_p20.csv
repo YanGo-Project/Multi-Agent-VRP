@@ -1,0 +1,6 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+M/p0.2/M-n101-k10_p0.2.json,demand,791,949,949,101,10,8,12,8
+M/p0.2/M-n121-k7_p0.2.json,demand,248,1056,1056,121,7,13,21,6
+M/p0.2/M-n151-k12_p0.2.json,demand,1020,1184,1184,151,12,10,15,10
+M/p0.2/M-n200-k16_p0.2.json,demand,1469,1715,1715,200,16,9,15,15
+M/p0.2/M-n200-k17_p0.2.json,demand,1464,1720,1720,200,17,9,15,15

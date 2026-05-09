@@ -1,0 +1,14 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+tai/p0.5/tai100a_p0.5.json,demand,12180,3010,3010,101,11,4,14,10
+tai/p0.5/tai100b_p0.5.json,demand,16270,3183,3183,101,11,4,14,11
+tai/p0.5/tai100c_p0.5.json,demand,18478,2513,2513,101,11,4,14,10
+tai/p0.5/tai100d_p0.5.json,demand,10982,2607,2607,101,11,4,14,11
+tai/p0.5/tai150a_p0.5.json,demand,16879,4945,4945,151,15,5,15,15
+tai/p0.5/tai150b_p0.5.json,demand,20995,4439,4439,151,14,5,17,13
+tai/p0.5/tai150c_p0.5.json,demand,23410,4633,4633,151,15,5,15,14
+tai/p0.5/tai150d_p0.5.json,demand,21035,4510,4510,151,14,5,17,13
+tai/p0.5/tai385_p0.5.json,demand,-14950,16788,16788,386,47,4,13,47
+tai/p0.5/tai75a_p0.5.json,demand,11351,2398,2398,76,10,3,12,9
+tai/p0.5/tai75b_p0.5.json,demand,12594,2312,2312,76,10,3,12,10
+tai/p0.5/tai75c_p0.5.json,demand,7621,1859,1859,76,9,4,13,8
+tai/p0.5/tai75d_p0.5.json,demand,11946,2229,2229,76,9,4,13,8

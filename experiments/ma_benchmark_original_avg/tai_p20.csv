@@ -1,0 +1,14 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+/tai/p0.2/tai100a_p0.2_demand_avg.json,demand_avg,20959,2044,2044,101,11,7,11,11
+/tai/p0.2/tai100b_p0.2_demand_avg.json,demand_avg,25032,1971,1971,101,11,7,11,11
+/tai/p0.2/tai100c_p0.2_demand_avg.json,demand_avg,25781,1418,1418,101,11,7,11,11
+/tai/p0.2/tai100d_p0.2_demand_avg.json,demand_avg,17950,1642,1642,101,11,7,11,11
+/tai/p0.2/tai150a_p0.2_demand_avg.json,demand_avg,33140,3091,3091,151,15,8,12,15
+/tai/p0.2/tai150b_p0.2_demand_avg.json,demand_avg,37198,2537,2537,151,14,8,13,14
+/tai/p0.2/tai150c_p0.2_demand_avg.json,demand_avg,38279,2369,2369,151,15,8,12,15
+/tai/p0.2/tai150d_p0.2_demand_avg.json,demand_avg,35738,2590,2590,151,14,8,13,14
+/tai/p0.2/tai385_p0.2_demand_avg.json,demand_avg,90029,26529,26529,386,47,6,10,47
+/tai/p0.2/tai75a_p0.2_demand_avg.json,demand_avg,17175,1681,1681,76,10,6,9,10
+/tai/p0.2/tai75b_p0.2_demand_avg.json,demand_avg,18380,1401,1401,76,10,6,9,10
+/tai/p0.2/tai75c_p0.2_demand_avg.json,demand_avg,12438,1282,1282,76,9,6,10,9
+/tai/p0.2/tai75d_p0.2_demand_avg.json,demand_avg,18284,1291,1291,76,9,6,10,9

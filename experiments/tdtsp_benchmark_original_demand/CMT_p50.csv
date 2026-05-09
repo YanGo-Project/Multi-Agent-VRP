@@ -1,0 +1,15 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+CMT/p0.5/CMT10_p0.5.json,demand,1448,1721,1721,200,18,5,17,16
+CMT/p0.5/CMT11_p0.5.json,demand,122,1232,1232,121,7,8,26,6
+CMT/p0.5/CMT12_p0.5.json,demand,652,1158,1158,101,10,5,15,8
+CMT/p0.5/CMT13_p0.5.json,demand,-33,1395,1395,121,11,5,17,9
+CMT/p0.5/CMT14_p0.5.json,demand,621,1189,1189,101,11,4,14,9
+CMT/p0.5/CMT1_p0.5.json,demand,124,619,619,51,5,5,15,5
+CMT/p0.5/CMT2_p0.5.json,demand,393,938,938,76,10,3,12,8
+CMT/p0.5/CMT3_p0.5.json,demand,373,1071,1071,101,8,6,19,8
+CMT/p0.5/CMT4_p0.5.json,demand,867,1359,1359,151,12,6,19,11
+CMT/p0.5/CMT5_p0.5.json,demand,1475,1706,1706,200,16,6,19,14
+CMT/p0.5/CMT6_p0.5.json,demand,145,611,611,51,6,4,13,5
+CMT/p0.5/CMT7_p0.5.json,demand,308,1050,1050,76,11,3,11,10
+CMT/p0.5/CMT8_p0.5.json,demand,364,1041,1041,101,9,5,17,9
+CMT/p0.5/CMT9_p0.5.json,demand,704,1531,1531,151,14,5,17,13

@@ -59,9 +59,12 @@ bool TInnerOperations::DoOperation(TPath& path, const TInputData& inputData,
 
     auto answer = (this->*kOperations[index])(path, inputData, context);
 
+#ifdef DEBUG
     if (!inputData.check_path_values(path)) {
         std::cout << "After operation: " << index << std::endl;
     }
+#endif
+
     return answer;
 }
 

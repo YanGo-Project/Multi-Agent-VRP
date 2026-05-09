@@ -1,0 +1,13 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+/DIMACS/p0.5/Loggi-n1001-k31_p0.5_1.json,demand,-8038,11255,11255,1001,31,16,49,31
+/DIMACS/p0.5/Loggi-n401-k23_p0.5_3.json,demand,-31314,32491,32491,401,23,8,27,23
+/DIMACS/p0.5/Loggi-n501-k24_p0.5_4.json,demand,-5861,7536,7536,501,24,10,32,24
+/DIMACS/p0.5/Loggi-n601-k19_p0.5_9.json,demand,-3534,6027,6027,601,19,15,48,19
+/DIMACS/p0.5/Loggi-n601-k42_p0.5_2.json,demand,-16973,18913,18913,601,42,7,22,42
+/DIMACS/p0.5/Loggi-n901-k42_p0.5_2.json,demand,-9793,12926,12926,901,42,10,33,42
+/DIMACS/p0.5/ORTEC-n242-k12_p0.5_2.json,demand,-8183,8919,8919,242,12,10,31,12
+/DIMACS/p0.5/ORTEC-n323-k21_p0.5_1.json,demand,-9949,10866,10866,323,21,7,23,21
+/DIMACS/p0.5/ORTEC-n405-k18_p0.5_8.json,demand,-7597,9002,9002,405,18,11,34,18
+/DIMACS/p0.5/ORTEC-n455-k41_p0.5_1.json,demand,-7404,8982,8982,455,41,5,17,41
+/DIMACS/p0.5/ORTEC-n510-k23_p0.5_3.json,demand,-18493,20083,20083,510,23,11,34,23
+/DIMACS/p0.5/ORTEC-n701-k64_p0.5_4.json,demand,-21130,24102,24102,701,64,5,17,64

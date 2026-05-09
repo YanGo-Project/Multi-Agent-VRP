@@ -1,0 +1,15 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+/CMT/p0.1/CMT10_p0.1_demand_avg.json,demand_avg,8360,1393,1393,200,18,9,13,18
+/CMT/p0.1/CMT11_p0.1_demand_avg.json,demand_avg,6574,1161,1161,121,7,15,19,7
+/CMT/p0.1/CMT12_p0.1_demand_avg.json,demand_avg,4856,854,854,101,10,9,11,10
+/CMT/p0.1/CMT13_p0.1_demand_avg.json,demand_avg,6216,1519,1519,121,11,9,12,11
+/CMT/p0.1/CMT14_p0.1_demand_avg.json,demand_avg,4771,939,939,101,11,8,11,11
+/CMT/p0.1/CMT1_p0.1_demand_avg.json,demand_avg,1854,523,523,51,5,9,11,5
+/CMT/p0.1/CMT2_p0.1_demand_avg.json,demand_avg,2994,845,845,76,10,6,9,10
+/CMT/p0.1/CMT3_p0.1_demand_avg.json,demand_avg,4027,831,831,101,8,11,14,8
+/CMT/p0.1/CMT4_p0.1_demand_avg.json,demand_avg,6099,1086,1086,151,12,11,14,12
+/CMT/p0.1/CMT5_p0.1_demand_avg.json,demand_avg,8440,1313,1313,200,16,11,14,16
+/CMT/p0.1/CMT6_p0.1_demand_avg.json,demand_avg,1816,561,561,51,6,7,10,6
+/CMT/p0.1/CMT7_p0.1_demand_avg.json,demand_avg,2957,882,882,76,11,6,8,11
+/CMT/p0.1/CMT8_p0.1_demand_avg.json,demand_avg,3951,907,907,101,9,10,13,9
+/CMT/p0.1/CMT9_p0.1_demand_avg.json,demand_avg,6039,1146,1146,151,14,9,12,14

@@ -1,0 +1,11 @@
+instance_path,K,time_limit_s,wall_time_s,exit_code,total_score,total_route_distance,total_route_time,paths_vertex_ok,agents_in_solution,all_vertex_constraints_ok
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,1,50,10.082,0,91757,28715,13605,1,1,1
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,2,50,18.068,0,181132,73804,30128,2,2,1
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,3,50,28.238,0,268877,112438,46162,3,3,1
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,4,50,37.647,0,355188,162230,63163,4,4,1
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,5,50,47.438,0,439013,198460,79102,5,5,1
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,6,50,58.310,0,520587,246500,96765,6,6,1
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,7,50,66.134,0,592775,326104,118834,7,7,1
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,8,50,66.553,0,592869,327026,118740,7,8,0
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,9,50,64.857,0,592823,326508,118786,7,9,0
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/18.json,10,50,64.585,0,592869,327026,118740,7,10,0

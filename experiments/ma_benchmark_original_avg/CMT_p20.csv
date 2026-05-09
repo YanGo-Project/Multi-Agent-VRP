@@ -1,0 +1,15 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+/CMT/p0.2/CMT10_p0.2_demand_avg.json,demand_avg,8347,1406,1406,200,18,8,14,18
+/CMT/p0.2/CMT11_p0.2_demand_avg.json,demand_avg,6721,1014,1014,121,7,13,21,7
+/CMT/p0.2/CMT12_p0.2_demand_avg.json,demand_avg,4897,813,813,101,10,8,12,10
+/CMT/p0.2/CMT13_p0.2_demand_avg.json,demand_avg,6299,1436,1436,121,11,8,14,11
+/CMT/p0.2/CMT14_p0.2_demand_avg.json,demand_avg,4829,881,881,101,11,7,11,11
+/CMT/p0.2/CMT1_p0.2_demand_avg.json,demand_avg,1859,518,518,51,5,8,12,5
+/CMT/p0.2/CMT2_p0.2_demand_avg.json,demand_avg,3004,835,835,76,10,6,9,10
+/CMT/p0.2/CMT3_p0.2_demand_avg.json,demand_avg,4002,856,856,101,8,10,15,8
+/CMT/p0.2/CMT4_p0.2_demand_avg.json,demand_avg,6114,1071,1071,151,12,10,15,12
+/CMT/p0.2/CMT5_p0.2_demand_avg.json,demand_avg,8433,1320,1320,200,16,9,15,16
+/CMT/p0.2/CMT6_p0.2_demand_avg.json,demand_avg,1805,572,572,51,6,6,10,6
+/CMT/p0.2/CMT7_p0.2_demand_avg.json,demand_avg,2976,863,863,76,11,5,9,11
+/CMT/p0.2/CMT8_p0.2_demand_avg.json,demand_avg,3986,872,872,101,9,8,14,9
+/CMT/p0.2/CMT9_p0.2_demand_avg.json,demand_avg,6049,1136,1136,151,14,8,13,14

@@ -1,0 +1,2 @@
+instance_path,K,time_limit_s,wall_time_s,exit_code,total_score,total_route_distance,total_route_time,paths_vertex_ok,agents_in_solution,all_vertex_constraints_ok
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/12.json,1,50,4.952,0,59557,23660,11298,1,1,1

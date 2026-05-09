@@ -1,0 +1,13 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+/Li/p0.1/Li_21_p0.1_demand_avg.json,demand_avg,173526,17994,17994,561,10,50,62,10
+/Li/p0.1/Li_22_p0.1_demand_avg.json,demand_avg,138153,14847,14847,601,15,36,44,15
+/Li/p0.1/Li_23_p0.1_demand_avg.json,demand_avg,224292,22108,22108,641,10,57,71,10
+/Li/p0.1/Li_24_p0.1_demand_avg.json,demand_avg,283617,25263,25263,721,10,64,80,9
+/Li/p0.1/Li_25_p0.1_demand_avg.json,demand_avg,177539,16261,16261,761,19,36,44,19
+/Li/p0.1/Li_26_p0.1_demand_avg.json,demand_avg,348020,29580,29580,801,10,72,88,9
+/Li/p0.1/Li_27_p0.1_demand_avg.json,demand_avg,196957,17243,17243,841,20,37,47,20
+/Li/p0.1/Li_28_p0.1_demand_avg.json,demand_avg,421336,32744,32744,881,10,79,97,10
+/Li/p0.1/Li_29_p0.1_demand_avg.json,demand_avg,500041,36599,36599,961,10,86,106,9
+/Li/p0.1/Li_30_p0.1_demand_avg.json,demand_avg,584055,43065,43065,1041,10,93,115,9
+/Li/p0.1/Li_31_p0.1_demand_avg.json,demand_avg,679957,43563,43563,1121,10,100,124,9
+/Li/p0.1/Li_32_p0.1_demand_avg.json,demand_avg,779480,48520,48520,1201,11,98,121,10

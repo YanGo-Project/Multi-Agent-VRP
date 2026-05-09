@@ -1,0 +1,13 @@
+json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/Loggi-n1001-k31_p0.1_tdtsp_base_demand.json,demand,-16812,21875,21875,1001,31,29,36,31
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/Loggi-n401-k23_p0.1_tdtsp_base_demand.json,demand,-36702,38823,38823,401,23,15,20,23
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/Loggi-n501-k24_p0.1_tdtsp_base_demand.json,demand,-12774,15302,15302,501,24,18,23,24
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/Loggi-n601-k19_p0.1_tdtsp_base_demand.json,demand,-8189,11433,11433,601,19,28,35,19
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/Loggi-n601-k42_p0.1_tdtsp_base_demand.json,demand,-25836,28814,28814,601,42,12,16,42
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/Loggi-n901-k42_p0.1_tdtsp_base_demand.json,demand,-19930,24677,24677,901,42,19,24,42
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/ORTEC-n242-k12_p0.1_tdtsp_base_demand.json,demand,-13663,14994,14994,242,12,18,23,12
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/ORTEC-n323-k21_p0.1_tdtsp_base_demand.json,demand,-16638,18412,18412,323,21,13,17,21
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/ORTEC-n405-k18_p0.1_tdtsp_base_demand.json,demand,-12854,15356,15356,405,18,20,25,18
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/ORTEC-n455-k41_p0.1_tdtsp_base_demand.json,demand,-12374,14930,14930,455,41,9,13,41
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/ORTEC-n510-k23_p0.1_tdtsp_base_demand.json,demand,-23988,26782,26782,510,23,19,25,23
+/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/datasets/one/DIMACS/p0.1/ORTEC-n701-k64_p0.1_tdtsp_base_demand.json,demand,-30559,35151,35151,701,64,9,13,64
