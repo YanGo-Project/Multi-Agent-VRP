@@ -17,21 +17,26 @@ using Solution = std::vector<FirstStepAnswer>;
 
 std::vector<TPath> ConstructPathsFromCandidates(std::vector<FirstStepAnswer>&& firstStep, TInputData& input, const uint32_t agent){
 
-    if (firstStep.empty()) { [[unlikely]]
-        return {
-            TPath{
-                .distance     = 0,
-                .time         = 0,
-                .score        = 0,
-                .max_distance = input.max_distance[agent],
-                .max_time     = input.max_time[agent],
-                .max_vertexes = input.max_load[agent],
-                .min_vertexes = input.min_load[agent],
-                .start_depo   = input.agent_depots[agent],
-                .end_depo     = input.agent_depots_end[agent],
-                .agent_idx    = agent,
-            }
+    if (firstStep.empty()) {
+        auto path = TPath{
+            .distance     = 0,
+            .time         = 0,
+            .score        = 0,
+            .max_distance = input.max_distance[agent],
+            .max_time     = input.max_time[agent],
+            .max_vertexes = input.max_load[agent],
+            .min_vertexes = input.min_load[agent],
+            .start_depo   = input.agent_depots[agent],
+            .end_depo     = input.agent_depots_end[agent],
+            .agent_idx    = agent,
         };
+
+        auto [distance, time, score] = input.get_path_distance_time_score(path);
+        path.distance = distance;
+        path.time = time;
+        path.score = score;
+
+        return {path};
     }
 
     std::vector<TPath> paths;
