@@ -13,7 +13,7 @@
 namespace {
     using points_type = TRoute::value_type;
 
-    inline bool NeedCheckMinimalVertices(const TPath& path) {
+    inline bool IsMinimalValid(const TPath& path) {
         return path.tour.size() >= path.min_vertexes;
     }
 } // namespace
@@ -37,8 +37,12 @@ bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData&
 
     auto answer = (this->*kOperations[idx])(path1, path2, inputData, ctx);
 
-    inputData.check_path_values(path1);
-    inputData.check_path_values(path2);
+    if (!inputData.check_path_values(path1)) {
+        std::cout << "After operation: " << idx << std::endl;
+    }
+    if (!inputData.check_path_values(path2)) {
+        std::cout << "After operation: " << idx << std::endl;
+    }
     return answer;
 }
 
@@ -205,8 +209,8 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
 bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     
     auto initial_score = path1.score + path2.score;
-    if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
-        initial_score = std::numeric_limits<decltype(initial_score)>::min() + 1;
+    if ((path1.tour.size() < path1.min_vertexes) != path2.tour.size() < path2.min_vertexes) {
+        initial_score = std::numeric_limits<decltype(initial_score)>::min();
     }
 
     struct best_operation {
@@ -231,8 +235,15 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
             const size_t new_size1 = split1 + (path2.tour.size() - split2);
             const size_t new_size2 = split2 + (path1.tour.size() - split1);
 
-            if ((NeedCheckMinimalVertices(path1) && new_size1 < path1.min_vertexes) || new_size1 > path1.max_vertexes ||
-                (NeedCheckMinimalVertices(path2) && new_size2 < path2.min_vertexes) || new_size2 > path2.max_vertexes) {
+            if ((IsMinimalValid(path1) && new_size1 < path1.min_vertexes) ||
+                 /* не даем пути стать еще меньше если он итак не проходит ограничения */
+                (!IsMinimalValid(path1) && new_size1 < path1.tour.size()) ||
+                new_size1 > path1.max_vertexes ||
+                (IsMinimalValid(path2) && new_size2 < path2.min_vertexes) || 
+                 /* не даем пути стать еще меньше если он итак не проходит ограничения */
+                (!IsMinimalValid(path2) && new_size2 < path2.tour.size()) ||
+                new_size2 > path2.max_vertexes
+            ) {
                 continue;
             }
 
@@ -384,8 +395,8 @@ bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &input
 // перемещаем отрезок между отрезками
 bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
-    if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
-        initial_score = std::numeric_limits<decltype(initial_score)>::min() + 1;
+    if ((path1.tour.size() < path1.min_vertexes) != path2.tour.size() < path2.min_vertexes) {
+        initial_score = std::numeric_limits<decltype(initial_score)>::min();
     }
 
     struct best_operation {
@@ -489,8 +500,9 @@ bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputD
 // cклейка и разрез двух маршрутов
 bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext& ctx) {
     int64_t initial_score = path1.score + path2.score;
-    if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
-        initial_score = std::numeric_limits<int64_t>::min() + 1;
+
+    if ((path1.tour.size() < path1.min_vertexes) != path2.tour.size() < path2.min_vertexes) {
+        initial_score = std::numeric_limits<decltype(initial_score)>::min();
     }
 
     const size_t combined_size = path1.tour.size() + path2.tour.size();
@@ -541,14 +553,18 @@ bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputD
 
     for (size_t split = 0; split <= combined_size; ++split) {
 
-        if ((NeedCheckMinimalVertices(path1) && split < path1.min_vertexes) || 
+        if ((IsMinimalValid(path1) && split < path1.min_vertexes) ||
+            /* не даем пути стать еще меньше если он итак не проходит ограничения */
+            (!IsMinimalValid(path1) && split < path1.tour.size()) ||
             split > path1.max_vertexes
         ) {
             continue;
         }
 
         const size_t second_size = combined_size - split;
-        if ((NeedCheckMinimalVertices(path2) && second_size < path2.min_vertexes) || 
+        if ((IsMinimalValid(path2) && second_size < path2.min_vertexes) || 
+            /* не даем пути стать еще меньше если он итак не проходит ограничения */
+            (!IsMinimalValid(path2) && second_size < path2.tour.size()) ||
             second_size > path2.max_vertexes
         ) {
             continue;
