@@ -12,6 +12,10 @@
 
 namespace {
     using points_type = TRoute::value_type;
+
+    inline bool NeedCheckMimimalVertexes(const TPath& path) {
+        return path.tour.size() >= path.min_vertexes;
+    }
 } // namespace
 
 bool TInterOperations::DoOperation(TPath& path1, TPath& path2, const TInputData& inputData,
@@ -199,6 +203,11 @@ bool TInterOperations::Swap(TPath& path1, TPath& path2, const TInputData &inputD
 
 // обмениваем "хвосты" у двух маршрутов
 bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
+
+    if (path1.tour.size() < path1.min_vertexes && path2.tour.size() < path2.min_vertexes) {
+        return false;
+    }
+    
     auto initial_score = path1.score + path2.score;
     if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
         initial_score = std::numeric_limits<decltype(initial_score)>::min() + 1;
@@ -226,8 +235,8 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
             const size_t new_size1 = split1 + (path2.tour.size() - split2);
             const size_t new_size2 = split2 + (path1.tour.size() - split1);
 
-            if (new_size1 < path1.min_vertexes || new_size1 > path1.max_vertexes ||
-                new_size2 < path2.min_vertexes || new_size2 > path2.max_vertexes) {
+            if ((NeedCheckMimimalVertexes(path1) && new_size1 < path1.min_vertexes) || new_size1 > path1.max_vertexes ||
+                (NeedCheckMimimalVertexes(path2) && new_size2 < path2.min_vertexes) || new_size2 > path2.max_vertexes) {
                 continue;
             }
 
@@ -376,7 +385,7 @@ bool TInterOperations::Cross(TPath& path1, TPath& path2, const TInputData &input
     return found;
 }
 
-// обмениваем отрезок между отрезками
+// перемещаем отрезок между отрезками
 bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputData &inputData, TInterOperationContext&) {
     auto initial_score = path1.score + path2.score;
     if (path1.tour.size() < path1.min_vertexes || path2.tour.size() < path2.min_vertexes) {
@@ -401,7 +410,9 @@ bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputD
 
     // src -> dst: пробуем переместить отрезок из src в dst и ищем лучший вариант
     auto try_relocate_direction = [&](TPath& src, TPath& dst, bool from_first) {
-        if (src.tour.size() <= src.min_vertexes || dst.tour.size() >= dst.max_vertexes) {
+        if ((NeedCheckMimimalVertexes(src) && src.tour.size() <= src.min_vertexes) || 
+            (NeedCheckMimimalVertexes(dst) && dst.tour.size() >= dst.max_vertexes)
+        ) {
             return;
         }
 
@@ -492,10 +503,6 @@ bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputD
         return false;
     }
 
-    if (combined_size < path1.min_vertexes + path2.min_vertexes) {
-        return false;
-    }
-
     TRoute combined;
     combined.reserve(path1.tour.size() + path2.tour.size());
     combined.insert(combined.end(), path1.tour.begin(), path1.tour.end());
@@ -523,12 +530,6 @@ bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputD
     selector.Init(inputData.agents_count);
     DoInnerOptimization(temp, inputData, inner_ctx, selector);
 
-    const size_t min_split = path1.min_vertexes;
-    const size_t max_split = std::min<size_t>(path1.max_vertexes, combined_size - path2.min_vertexes);
-    if (min_split > max_split) {
-        return false;
-    }
-
     struct best_operation {
         size_t split;
         int64_t first_time;
@@ -543,9 +544,18 @@ bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputD
     bool found = false;
     best_operation best_glue{};
 
-    for (size_t split = min_split; split <= max_split; ++split) {
+    for (size_t split = 1; split <= combined_size; ++split) {
+
+        if (NeedCheckMimimalVertexes(path1) && split < path1.min_vertexes || 
+            split > path1.max_vertexes
+        ) {
+            continue;
+        }
+
         const size_t second_size = combined_size - split;
-        if (second_size < path2.min_vertexes || second_size > path2.max_vertexes) {
+        if ((NeedCheckMimimalVertexes(path2) && second_size < path2.min_vertexes) || 
+            second_size > path2.max_vertexes
+        ) {
             continue;
         }
         auto [d1, t1, s1] = inputData.EvalVirtualTour(path1, split, [&](size_t pos) -> points_type {
