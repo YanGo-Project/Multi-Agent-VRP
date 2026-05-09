@@ -13,7 +13,7 @@
 namespace {
     using points_type = TRoute::value_type;
 
-    inline bool NeedCheckMinimalVertices(const TPath& path) {
+    inline bool IsMinimalValid(const TPath& path) {
         return path.tour.size() >= path.min_vertexes;
     }
 } // namespace
@@ -235,8 +235,15 @@ bool TInterOperations::TwoOpt(TPath& path1, TPath& path2, const TInputData &inpu
             const size_t new_size1 = split1 + (path2.tour.size() - split2);
             const size_t new_size2 = split2 + (path1.tour.size() - split1);
 
-            if ((NeedCheckMinimalVertices(path1) && new_size1 < path1.min_vertexes) || new_size1 > path1.max_vertexes ||
-                (NeedCheckMinimalVertices(path2) && new_size2 < path2.min_vertexes) || new_size2 > path2.max_vertexes) {
+            if ((IsMinimalValid(path1) && new_size1 < path1.min_vertexes) ||
+                 /* не даем пути стать еще меньше если он итак не проходит ограничения */
+                (!IsMinimalValid(path1) && new_size1 < path1.tour.size()) ||
+                new_size1 > path1.max_vertexes ||
+                (IsMinimalValid(path2) && new_size2 < path2.min_vertexes) || 
+                 /* не даем пути стать еще меньше если он итак не проходит ограничения */
+                (!IsMinimalValid(path2) && new_size2 < path2.tour.size()) ||
+                new_size2 > path2.max_vertexes
+            ) {
                 continue;
             }
 
@@ -546,14 +553,18 @@ bool TInterOperations::Glue(TPath& path1, TPath& path2, const TInputData &inputD
 
     for (size_t split = 0; split <= combined_size; ++split) {
 
-        if ((NeedCheckMinimalVertices(path1) && split < path1.min_vertexes) || 
+        if ((IsMinimalValid(path1) && split < path1.min_vertexes) ||
+            /* не даем пути стать еще меньше если он итак не проходит ограничения */
+            (!IsMinimalValid(path1) && split < path1.tour.size()) ||
             split > path1.max_vertexes
         ) {
             continue;
         }
 
         const size_t second_size = combined_size - split;
-        if ((NeedCheckMinimalVertices(path2) && second_size < path2.min_vertexes) || 
+        if ((IsMinimalValid(path2) && second_size < path2.min_vertexes) || 
+            /* не даем пути стать еще меньше если он итак не проходит ограничения */
+            (!IsMinimalValid(path2) && second_size < path2.tour.size()) ||
             second_size > path2.max_vertexes
         ) {
             continue;
