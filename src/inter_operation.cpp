@@ -406,7 +406,7 @@ bool TInterOperations::RelocateSegment(TPath& path1, TPath& path2, const TInputD
 
     // src -> dst: пробуем переместить отрезок из src в dst и ищем лучший вариант
     auto try_relocate_direction = [&](TPath& src, TPath& dst, bool from_first) {
-        if (src.tour.size() <= src.min_vertexes && dst.tour.size() >= dst.max_vertexes
+        if (src.tour.size() <= src.min_vertexes || dst.tour.size() >= dst.max_vertexes
         ) {
             return;
         }
