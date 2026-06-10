@@ -1,4 +1,0 @@
-instance_path,K,time_limit_s,wall_time_s,exit_code,total_score,total_route_distance,total_route_time,paths_vertex_ok,agents_in_solution,all_vertex_constraints_ok
-/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/14.json,1,50,11.202,0,62246,35135,13424,1,1,1
-/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/14.json,2,50,22.446,0,116910,67954,26090,2,2,1
-/Users/iskodisko/project/yandex_search/Multi-Agent-VRP/data/14.json,3,50,34.817,0,167121,108163,40284,3,3,1
