@@ -63,11 +63,6 @@
   ]
 }
 ```
-
-В коде определён также одноагентный формат `OutData` (`route`, `solution_size`, `total_time`,
-`total_distance`, `total_value`) с (де)сериализацией — для совместимости с TDTSP-PD, **но `main`
-его не пишет** (`WriteSolutionToJsonFile` не вызывается).
-
 ---
 
 ## Установка зависимостей
