@@ -111,6 +111,7 @@ TInputData::get_path_distance_time_score(const TPath& path) const {
 bool TInputData::check_path_values(const TPath& path) const {
     auto [distance, time, score] = get_path_distance_time_score(path);
     if (distance != path.distance || time != path.time || score != path.score) {
+#ifdef DEBUG
         std::cout << "We have some bad news for path: " << path << "\n"
          << "computed metrics: "
          << "distance=" << distance << " "
@@ -120,6 +121,7 @@ bool TInputData::check_path_values(const TPath& path) const {
          << "distance=" << path.distance << " "
          << "time=" << path.time << " "
          << "score=" << path.score << std::endl;
+#endif
         return false;
     }
     return true;
