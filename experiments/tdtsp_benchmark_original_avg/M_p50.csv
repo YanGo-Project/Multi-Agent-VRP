@@ -1,6 +1,0 @@
-json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
-/M/p0.5/M-n101-k10_p0.5_demand_avg.json,demand_avg,4671,1039,1039,101,10,5,15,7
-/M/p0.5/M-n121-k7_p0.5_demand_avg.json,demand_avg,6549,1186,1186,121,7,8,26,5
-/M/p0.5/M-n151-k12_p0.5_demand_avg.json,demand_avg,5813,1372,1372,151,12,6,19,8
-/M/p0.5/M-n200-k16_p0.5_demand_avg.json,demand_avg,8075,1678,1678,200,16,6,19,11
-/M/p0.5/M-n200-k17_p0.5_demand_avg.json,demand_avg,8053,1662,1662,200,17,5,18,11
