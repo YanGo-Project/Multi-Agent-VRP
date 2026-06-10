@@ -1,4 +1,0 @@
-json_path,variant,sum_score,sum_time,sum_distance,points_count,agents_count,vertex_min,vertex_max,feasible_agents_num
-F/p0.2/F-n135-k7_p0.2.json,demand,13612,1008,1008,135,7,15,23,7
-F/p0.2/F-n45-k4_p0.2.json,demand,6545,569,569,45,4,8,14,4
-F/p0.2/F-n72-k4_p0.2.json,demand,114592,248,248,72,4,14,22,4
